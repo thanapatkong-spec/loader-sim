@@ -23,6 +23,11 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 - Log: `localStorage['loaderLog.v1']` (array of attempts, per trainee name `loaderWho`), history overlay with SVG progress chart, CSV export (UTF-8 BOM).
 - Performance: quality tiers `QUAL` (pixel ratio, shadow map size, grain count, grain mesh detail); `monitor()` drops a tier when FPS < 40 (trims untouched pile grains mid-run) and climbs back when > 57, never above a tier that stuttered. Low tiers update shadows every other frame; wheel lugs are instanced.
 
+## Desktop build (`desktop/`)
+- Electron shell (`main.js`) around a generated offline copy of `index.html`: `build-app.js` writes `desktop/app/` and swaps the cdnjs Three.js tag and Google Fonts links for local copies from `node_modules` (`three@0.128.0`, `@fontsource/*`). It throws if those tags change in `index.html`, so update the regexes there when editing them.
+- `.github/workflows/desktop.yml` builds the Windows NSIS installer + portable exe on `windows-latest` (artifact on every push touching the app, GitHub Release on `v*` tags). NSIS needs Windows (wine on Linux), but `npx electron-builder --win --dir` works on Linux for a quick packaging check.
+- Local check: `xvfb-run` + Playwright `_electron.launch` against `desktop/node_modules/electron/dist/electron`.
+
 ## Tuning knobs (top of script)
 `VF, VR, STEER, PHIMAX, BOOMRATE, BUCKRATE, TARGET, TLIMIT, TPP, BCAP, RIM`, plus `QUAL` tiers and per-level `limit`/`grades`. Pile resistance: `L.v/=(1+bucketContacts*0.4)` (penetration-based).
 

@@ -1,0 +1,70 @@
+{
+  "name": "loader-sim-desktop",
+  "productName": "LoaderSim",
+  "version": "0.2.0",
+  "description": "ลานฝึกรถตัก · Wheel Loader Training Sim (desktop build)",
+  "author": "PETSBOX SUPPLY",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "prepare-app": "node build-app.js",
+    "start": "npm run prepare-app && electron .",
+    "dist:win": "npm run prepare-app && electron-builder --win --x64 --publish never"
+  },
+  "devDependencies": {
+    "@fontsource/barlow-condensed": "5.3.0",
+    "@fontsource/ibm-plex-sans-thai": "5.3.0",
+    "@fontsource/jetbrains-mono": "5.3.0",
+    "electron": "44.4.5",
+    "electron-builder": "26.15.3",
+    "three": "0.128.0"
+  },
+  "build": {
+    "appId": "com.petsbox.loadersim",
+    "productName": "LoaderSim",
+    "copyright": "PETSBOX SUPPLY",
+    "files": [
+      "main.js",
+      "app/**/*"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ลานฝึกรถตัก",
+      "artifactName": "LoaderSim-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "LoaderSim-Portable-${version}.exe"
+    },
+    "publish": null
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thanapatkong-spec/loader-sim.git"
+  }
+}
