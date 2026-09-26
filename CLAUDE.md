@@ -13,15 +13,22 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 - Inputs: keyboard, Gamepad API, two on-screen touch sticks (right stick uses real loader lever convention: pull back = raise boom, left = curl).
 - Cameras: chase / cab / top.
 
+## Phase 2 — done
+- Levels live in the `LEVELS` table (`slalom`, `fill`, `dump`, `mission`), each with `setup/tick/hud/result/key`. `reset(id,run)` builds the scene per level (truck on/off via `setTruck`, pile on/off, slalom course `slalomG`, weigh pad `padG`).
+  - Level 1 slalom: 4 staggered gates (`GATES`, half-width `GHW`), finish at `FINZ`, par `SLALOM_PAR`; cone contact = sampled cone points vs loader OBBs.
+  - Level 2 fill: 3 weighings on the pad (stopped, bucket raised > 0.25 m, 1 s); re-armed when the bucket is emptied. Fill % vs `BCAP`.
+  - Level 3 dump: a dump cycle is loaded → tipping near the truck (snapshot gap to bed / offset along bed / approach angle via `dumpGeom()`) → settled; delivered = truck-count delta.
+- `countSoil()` no longer counts grains still inside the bucket as "in truck".
+- Gauges: bucket height (lowest bucket point, green above truck rim `RIM`), bucket-load bar vs `BCAP`.
+- Log: `localStorage['loaderLog.v1']` (array of attempts, per trainee name `loaderWho`), history overlay with SVG progress chart, CSV export (UTF-8 BOM).
+- Performance: quality tiers `QUAL` (pixel ratio, shadow map size, grain count, grain mesh detail); `monitor()` drops a tier when FPS < 40 (trims untouched pile grains mid-run) and climbs back when > 57, never above a tier that stuttered. Low tiers update shadows every other frame; wheel lugs are instanced.
+
 ## Tuning knobs (top of script)
-`VF, VR, STEER, PHIMAX, BOOMRATE, BUCKRATE, TARGET, TLIMIT, TPP`. Pile resistance: `L.v/=(1+bucketContacts*0.4)` (penetration-based).
+`VF, VR, STEER, PHIMAX, BOOMRATE, BUCKRATE, TARGET, TLIMIT, TPP, BCAP, RIM`, plus `QUAL` tiers and per-level `limit`/`grades`. Pile resistance: `L.v/=(1+bucketContacts*0.4)` (penetration-based).
 
 ## Roadmap
-### Phase 2
-- Skill drills as separate levels: cone slalom, fill-the-bucket, precise truck dump (V-pattern loading).
-- Dashboard gauges: boom height in metres, bucket load, hydraulic pressure feel.
-- Per-trainee session log (localStorage) with progress over attempts; exportable CSV.
-- Performance pass for mid-range Android phones (reduce shadow map, adaptive particle count).
+### Phase 2 leftovers
+- Hydraulic pressure feel on the dashboard.
 ### Phase 3
 - ESP32-S3 firmware in `firmware/` acting as a USB HID gamepad (2 joysticks + buttons, hall-effect sensors). Map axes to the same Gamepad API layout the sim already reads.
 
