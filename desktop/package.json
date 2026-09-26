@@ -10,7 +10,8 @@
   "scripts": {
     "prepare-app": "node build-app.js",
     "start": "npm run prepare-app && electron .",
-    "dist:win": "npm run prepare-app && electron-builder --win --x64 --publish never"
+    "dist:win": "npm run prepare-app && electron-builder --win --x64 --publish never",
+    "dist:mac": "npm run prepare-app && electron-builder --mac --publish never"
   },
   "devDependencies": {
     "@fontsource/barlow-condensed": "5.3.0",
@@ -61,7 +62,23 @@
     "portable": {
       "artifactName": "LoaderSim-Portable-${version}.exe"
     },
-    "publish": null
+    "publish": null,
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.education",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "identity": "-"
+    },
+    "dmg": {
+      "artifactName": "LoaderSim-${version}-mac.dmg"
+    }
   },
   "repository": {
     "type": "git",

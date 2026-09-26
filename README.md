@@ -22,11 +22,14 @@
 
 บนมือถือมีก้านบังคับบนจอสองข้าง ดูแผนพัฒนาได้ใน `CLAUDE.md`
 
-## โปรแกรมบน Windows (ติดตั้งลงเครื่อง เล่นได้โดยไม่ต้องต่อเน็ต)
+## โปรแกรมบน Windows / Mac (ติดตั้งลงเครื่อง เล่นได้โดยไม่ต้องต่อเน็ต)
 
-ดาวน์โหลดได้จากหน้า **Releases** ของ repo (หรือจาก Actions → "Desktop build (Windows)" → Artifacts)
+ดาวน์โหลดได้จากหน้า **Releases** ของ repo (หรือจาก Actions → "Desktop build" → Artifacts)
 - `LoaderSim-Setup-x.y.z.exe` ตัวติดตั้ง สร้างไอคอน "ลานฝึกรถตัก" บนเดสก์ท็อป
 - `LoaderSim-Portable-x.y.z.exe` ไฟล์เดียว ดับเบิลคลิกเล่นได้เลย ไม่ต้องติดตั้ง
+- `LoaderSim-x.y.z-mac.dmg` สำหรับ Mac (Intel และ Apple Silicon) เปิดแล้วลาก LoaderSim ไปไว้ใน Applications
+  - ยังไม่ได้ลงนามกับ Apple: ครั้งแรกถ้าขึ้นว่าเปิดไม่ได้ ให้ไปที่ System Settings → Privacy & Security → กด "Open Anyway"
+  - ถ้าขึ้นว่า "damaged" ให้เปิด Terminal แล้วพิมพ์ `xattr -cr /Applications/LoaderSim.app` จากนั้นเปิดใหม่
 
 F11 = เต็มจอ · F5 = โหลดใหม่ · ผลการฝึกเก็บในเครื่องนั้น ส่งออก CSV ได้จากเมนูประวัติ
 

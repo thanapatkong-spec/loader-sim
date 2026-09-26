@@ -25,7 +25,7 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 
 ## Desktop build (`desktop/`)
 - Electron shell (`main.js`) around a generated offline copy of `index.html`: `build-app.js` writes `desktop/app/` and swaps the cdnjs Three.js tag and Google Fonts links for local copies from `node_modules` (`three@0.128.0`, `@fontsource/*`). It throws if those tags change in `index.html`, so update the regexes there when editing them.
-- `.github/workflows/desktop.yml` builds the Windows NSIS installer + portable exe on `windows-latest` (artifact on every push touching the app, GitHub Release on `v*` tags). NSIS needs Windows (wine on Linux), but `npx electron-builder --win --dir` works on Linux for a quick packaging check.
+- `.github/workflows/desktop.yml` builds the Windows NSIS installer + portable exe on `windows-latest` and an ad-hoc-signed universal macOS dmg on `macos-latest` (no Apple Developer ID / notarization yet) (artifact on every push touching the app, GitHub Release on `v*` tags). NSIS needs Windows (wine on Linux), but `npx electron-builder --win --dir` works on Linux for a quick packaging check.
 - Local check: `xvfb-run` + Playwright `_electron.launch` against `desktop/node_modules/electron/dist/electron`.
 
 ## Tuning knobs (top of script)
