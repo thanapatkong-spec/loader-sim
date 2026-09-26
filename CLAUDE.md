@@ -23,6 +23,12 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 - Log: `localStorage['loaderLog.v1']` (array of attempts, per trainee name `loaderWho`), history overlay with SVG progress chart, CSV export (UTF-8 BOM).
 - Performance: quality tiers `QUAL` (pixel ratio, shadow map size, grain count, grain mesh detail); `monitor()` drops a tier when FPS < 40 (trims untouched pile grains mid-run) and climbs back when > 57, never above a tier that stuttered. Low tiers update shadows every other frame; wheel lugs are instanced.
 
+## Excavator + readiness (Phase 2b — done)
+- Second machine: excavator (`E` state, `exG→exUp→exBoom→exArm→exBkt`, `stepEx()`), ISO pattern: left stick arm/swing, right stick boom/bucket; keys W/S arm, A/D swing, ↑ boom down, ↓ boom up, ←/→ curl/dump, I/K/J/L tracks. Levels carry `machine:'ex'`; `setScene()` toggles machine, truck, trench and colliders (`b.mach`).
+  - Joint rates/limits `EXR`/`EXLIM`, bucket `BCAP_EX`; soil resistance scales joints down to 35% min. Ground constraint releases joints one at a time (boom first) so the bucket can drag along the floor; ground strikes counted in `gndHits`.
+  - `ex_ctrl`: touch 6 targets (`EX_TGT`) with the teeth (`EX_TIP`). `ex_trench`: pit `PIT` cut into the ground mesh (lid in other levels), floor handled in the particle ground pass, walls are static `mach:'pit'` colliders; `trenchStats()` gives dug %, per-1 m depth (volume based), spoil in `SPOIL`; submit with Enter once ≥85%. `ex_load`: truck parked via `lv.truckAt` so the swing never crosses the cab.
+- Pass criteria: `CRIT[levelId]` (list of checks with a coaching tip). A level is passed when `PASS_NEED` (2) of the last `PASS_WIN` (3) attempts pass every check (`lvStatus`). Result screen lists ✓/✗ and tips; menu marks passed levels and the recommended next one; "ประเมินความพร้อม" overlay (`openReady`) summarises per machine and prints. CSV has a pass column and excavator metrics.
+
 ## Desktop build (`desktop/`)
 - Electron shell (`main.js`) around a generated offline copy of `index.html`: `build-app.js` writes `desktop/app/` and swaps the cdnjs Three.js tag and Google Fonts links for local copies from `node_modules` (`three@0.128.0`, `@fontsource/*`). It throws if those tags change in `index.html`, so update the regexes there when editing them.
 - `.github/workflows/desktop.yml` builds the Windows NSIS installer + portable exe on `windows-latest` and an ad-hoc-signed universal macOS dmg on `macos-latest` (no Apple Developer ID / notarization yet) (artifact on every push touching the app, GitHub Release on `v*` tags). NSIS needs Windows (wine on Linux), but `npx electron-builder --win --dir` works on Linux for a quick packaging check.
@@ -34,6 +40,7 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 ## Roadmap
 ### Phase 2 leftovers
 - Hydraulic pressure feel on the dashboard.
+- Tune excavator criteria/targets with real trainees (thresholds were set from scripted runs, not people).
 ### Phase 3
 - ESP32-S3 firmware in `firmware/` acting as a USB HID gamepad (2 joysticks + buttons, hall-effect sensors). Map axes to the same Gamepad API layout the sim already reads.
 
