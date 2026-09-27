@@ -39,6 +39,9 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 - Soil on the floor: grains lying on the ground get a soft sand splat (`soilSplat`) instead of a core; cores need ≥3 neighbours, ≥6 for grains on the floor.
 - Pass criteria: `CRIT[levelId]` (list of checks with a coaching tip). A level is passed when `PASS_NEED` (2) of the last `PASS_WIN` (3) attempts pass every check (`lvStatus`). Result screen lists ✓/✗ and tips; menu marks passed levels and the recommended next one; "ประเมินความพร้อม" overlay (`openReady`) summarises per machine and prints. CSV has a pass column and excavator metrics.
 
+## Web (GitHub Pages)
+- `.github/workflows/pages.yml` publishes `index.html` to https://thanapatkong-spec.github.io/loader-sim/ on every push to `main` touching it (needs Settings → Pages → Source: GitHub Actions once). Training logs live in each browser's localStorage for that domain.
+
 ## Desktop build (`desktop/`)
 - Electron shell (`main.js`) around a generated offline copy of `index.html`: `build-app.js` writes `desktop/app/` and swaps the cdnjs Three.js tag and Google Fonts links for local copies from `node_modules` (`three@0.128.0`, `@fontsource/*`). It throws if those tags change in `index.html`, so update the regexes there when editing them.
 - `.github/workflows/desktop.yml` builds the Windows NSIS installer + portable exe on `windows-latest` and an ad-hoc-signed universal macOS dmg on `macos-latest` (no Apple Developer ID / notarization yet) (artifact on every push touching the app, GitHub Release on `v*` tags). NSIS needs Windows (wine on Linux), but `npx electron-builder --win --dir` works on Linux for a quick packaging check.
