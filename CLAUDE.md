@@ -27,6 +27,8 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 - Second machine: excavator (`E` state, `exG→exUp→exBoom→exArm→exBkt`, `stepEx()`), ISO pattern: left stick arm/swing, right stick boom/bucket; keys W/S arm, A/D swing, ↑ boom down, ↓ boom up, ←/→ curl/dump, I/K/J/L tracks. Levels carry `machine:'ex'`; `setScene()` toggles machine, truck, trench and colliders (`b.mach`).
   - Joint rates/limits `EXR`/`EXLIM`, bucket `BCAP_EX`; soil resistance scales joints down to 35% min. Ground constraint releases joints one at a time (boom first) so the bucket can drag along the floor; ground strikes counted in `gndHits`.
   - `ex_ctrl`: touch 6 targets (`EX_TGT`) with the teeth (`EX_TIP`). `ex_trench`: pit `PIT` cut into the ground mesh (lid in other levels), floor handled in the particle ground pass, walls are static `mach:'pit'` colliders; `trenchStats()` gives dug %, per-1 m depth (volume based), spoil in `SPOIL`; submit with Enter once ≥85%. `ex_load`: truck parked via `lv.truckAt` so the swing never crosses the cab.
+  - Excavations live in `PITS` (`trench` = box walls, `pond` = 5×5 m, 1.2 m deep, 1:1 banks); `PT` is the active one and `pitFloor(x,z)` is the floor used by particles and the bucket (banks are a height field, so loose soil rests on them). `fillPit()` / `buildTrim()` create the soil, `pitStats()` (dug %, per-cell volumetric depth over `nx×nz` cells, spoil in `lv.spoil`) and `trimStats()` (bank/rim clean %, soil fallen to the bottom) measure it.
+  - `ex_pit` (dig the pond, submit ≥85%) and `ex_trim` (clean the banks + 1 m rim band `RIMW`, keep the bottom clean). Bucket strikes count only when the bucket reaches a surface faster than 1.2 m/s (`exVd`), so scraping is not penalised.
 - Pass criteria: `CRIT[levelId]` (list of checks with a coaching tip). A level is passed when `PASS_NEED` (2) of the last `PASS_WIN` (3) attempts pass every check (`lvStatus`). Result screen lists ✓/✗ and tips; menu marks passed levels and the recommended next one; "ประเมินความพร้อม" overlay (`openReady`) summarises per machine and prints. CSV has a pass column and excavator metrics.
 
 ## Desktop build (`desktop/`)
@@ -40,7 +42,7 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 ## Roadmap
 ### Phase 2 leftovers
 - Hydraulic pressure feel on the dashboard.
-- Tune excavator criteria/targets with real trainees (thresholds were set from scripted runs, not people).
+- Tune excavator criteria/targets with real trainees (thresholds were set from scripted runs, not people). The scripted test bot could not clean pond banks well, so `ex_trim` thresholds especially need a human check.
 ### Phase 3
 - ESP32-S3 firmware in `firmware/` acting as a USB HID gamepad (2 joysticks + buttons, hall-effect sensors). Map axes to the same Gamepad API layout the sim already reads.
 

@@ -335,9 +335,15 @@ const RIM=2.83;                      // truck side-board top, m
 const BCAP_EX=1.8, EX_TARGET=8;      // t per heaped bucket, t to load in level ex_load
 const EXR={sw:32*DEG,bm:24*DEG,ar:34*DEG,bk:62*DEG,v:1.6,turn:26*DEG};
 const EXLIM={bm:[-45*DEG,60*DEG],ar:[-155*DEG,-30*DEG],bk:[-155*DEG,35*DEG]};
-const PIT={x0:-0.9,x1:0.9,z0:-7.3,z1:-3.3,d:1.0};   // trench line for level ex_trench (world x/z, depth)
+// excavations cut into the ground (world x/z rect, depth); 'box' = vertical walls, 'slope' = banks at m (depth per metre run)
+const PITS={trench:{id:'trench',kind:'box',x0:-0.9,x1:0.9,z0:-7.3,z1:-3.3,d:1.0,nx:1,nz:5},
+            pond:{id:'pond',kind:'slope',x0:-2.5,x1:2.5,z0:-9.5,z1:-4.5,d:1.2,m:1.0,nx:3,nz:3}};
+const PIT=PITS.trench;
 const SPOIL={x0:2.6,x1:6.8,z0:-9.5,z1:-1.5};        // where the trench spoil has to go
-let pitOn=false;
+const SPOIL_P={x0:4.2,x1:7.0,z0:-7.5,z1:-2.5};      // spoil zone for the pond levels
+let PT=null;                                        // active excavation (null = flat ground)
+function pitFloor(x,z){const p=PT;if(!p||x<=p.x0||x>=p.x1||z<=p.z0||z>=p.z1)return 0;if(p.kind==='box')return -p.d;
+  return -Math.min(p.d,Math.min(x-p.x0,p.x1-x,z-p.z0,p.z1-z)*p.m)}
 
 /* ---------- quality tiers (adaptive) ---------- */
 const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
@@ -376,7 +382,7 @@ const mYellow=M(0xE7A21A,{roughness:.55}), mYellowD=M(0xC98A12,{roughness:.6}), 
 function box(w,h,d,mat,x,y,z,parent,shadow=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=shadow;m.receiveShadow=true;parent.add(m);return m}
 
 /* ---------- ground ---------- */
-const pitLid=new THREE.Mesh(),pitG=new THREE.Group();
+const pitLids={trench:new THREE.Mesh(),pond:new THREE.Mesh()},pitG=new THREE.Group(),pondG=new THREE.Group();
 const patch=new THREE.Mesh(new THREE.CircleGeometry(6.5,48),new THREE.MeshStandardMaterial({color:0x6e5840,roughness:1,transparent:true,opacity:.55}));
 (function ground(){
   const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');
@@ -385,17 +391,25 @@ const patch=new THREE.Mesh(new THREE.CircleGeometry(6.5,48),new THREE.MeshStanda
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(50/220,50/220);
   // ground is a shape with a hole where the trench is dug (shape y = -world z); a lid covers it in other levels
   const V2=THREE.Vector2,shp=new THREE.Shape([new V2(-110,-110),new V2(110,-110),new V2(110,110),new V2(-110,110)]);
-  shp.holes.push(new THREE.Path([new V2(PIT.x0,-PIT.z1),new V2(PIT.x0,-PIT.z0),new V2(PIT.x1,-PIT.z0),new V2(PIT.x1,-PIT.z1)]));
+  for(const q of Object.values(PITS))shp.holes.push(new THREE.Path([new V2(q.x0,-q.z1),new V2(q.x0,-q.z0),new V2(q.x1,-q.z0),new V2(q.x1,-q.z1)]));
   const gmat=new THREE.MeshStandardMaterial({map:t,roughness:1});
   const gm=new THREE.Mesh(new THREE.ShapeGeometry(shp),gmat);gm.rotation.x=-Math.PI/2;gm.receiveShadow=true;scene.add(gm);
-  const lg=new THREE.PlaneGeometry(PIT.x1-PIT.x0,PIT.z1-PIT.z0),cx=(PIT.x0+PIT.x1)/2,cz=(PIT.z0+PIT.z1)/2,pa=lg.attributes.position,uv=lg.attributes.uv;
-  for(let i=0;i<pa.count;i++)uv.setXY(i,cx+pa.getX(i),-cz+pa.getY(i));
-  pitLid.geometry=lg;pitLid.material=gmat;pitLid.rotation.x=-Math.PI/2;pitLid.position.set(cx,0,cz);pitLid.receiveShadow=true;scene.add(pitLid);
+  for(const q of Object.values(PITS)){const lg=new THREE.PlaneGeometry(q.x1-q.x0,q.z1-q.z0),lx=(q.x0+q.x1)/2,lz=(q.z0+q.z1)/2,pa=lg.attributes.position,uv=lg.attributes.uv;
+    for(let i=0;i<pa.count;i++)uv.setXY(i,lx+pa.getX(i),-lz+pa.getY(i));
+    const lid=pitLids[q.id];lid.geometry=lg;lid.material=gmat;lid.rotation.x=-Math.PI/2;lid.position.set(lx,0,lz);lid.receiveShadow=true;scene.add(lid)}
+  const cx=(PIT.x0+PIT.x1)/2,cz=(PIT.z0+PIT.z1)/2;
   // open trench: floor + earth walls
   const pm=M(0x5d4a36,{roughness:1}),W=PIT.x1-PIT.x0,Lz=PIT.z1-PIT.z0,d=PIT.d;
   box(W,0.05,Lz,pm,cx,-d-0.025,cz,pitG,false);
   for(const s of [-1,1]){box(0.05,d,Lz,pm,cx+s*(W/2+0.025),-d/2,cz,pitG,false);box(W,d,0.05,pm,cx,-d/2,cz+s*(Lz/2+0.025),pitG,false)}
   scene.add(pitG);
+  // pond: inverted truncated pyramid (banks + flat bottom)
+  {const q=PITS.pond,r=q.d/q.m,o=[[q.x0,q.z0],[q.x1,q.z0],[q.x1,q.z1],[q.x0,q.z1]],ii=[[q.x0+r,q.z0+r],[q.x1-r,q.z0+r],[q.x1-r,q.z1-r],[q.x0+r,q.z1-r]],pos=[];
+    const O=k=>[o[k][0],0,o[k][1]],I=k=>[ii[k][0],-q.d,ii[k][1]],tri=(a,b,c)=>pos.push(...a,...b,...c);
+    for(let k=0;k<4;k++){const n=(k+1)%4;tri(O(k),I(k),O(n));tri(O(n),I(k),I(n))}
+    tri(I(0),I(3),I(1));tri(I(1),I(3),I(2));
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.computeVertexNormals();
+    const m=new THREE.Mesh(g,M(0x6a543c,{roughness:1,side:THREE.DoubleSide}));m.receiveShadow=true;pondG.add(m);scene.add(pondG)}
   patch.rotation.x=-Math.PI/2;patch.position.set(PILE.x,0.01,PILE.z);patch.receiveShadow=true;scene.add(patch);
   // haul-road ruts
   const rut=new THREE.MeshStandardMaterial({color:0x7a6a55,roughness:1,transparent:true,opacity:.5});
@@ -578,15 +592,22 @@ function exApplyT(){exG.position.set(E.x,0,E.z);exG.rotation.y=E.hd;exUp.rotatio
   const a=new V3(1.35,1.25,0.3),cb=Math.cos(E.bm),sb=Math.sin(E.bm),b=new V3(0.9+2.2*cb+0.35*sb,1.85+2.2*sb-0.35*cb,0.3),dv=b.clone().sub(a),len=dv.length();dv.normalize();
   const bl=Math.min(len,1.5);exCyl.barrel.position.copy(a).addScaledVector(dv,bl/2);exCyl.barrel.quaternion.setFromUnitVectors(UP,dv);exCyl.barrel.scale.set(1.3,bl,1.3);
   const rl=len-bl+0.2;exCyl.rod.position.copy(b).addScaledVector(dv,-rl/2);exCyl.rod.quaternion.setFromUnitVectors(UP,dv);exCyl.rod.scale.set(1.3,rl,1.3)}
-const floorAt=(x,z)=>pitOn&&x>PIT.x0&&x<PIT.x1&&z>PIT.z0&&z<PIT.z1?-PIT.d:0;
+const floorAt=pitFloor;
 function exBucketLow(){let lo=1e9;for(const p of exBktPts){_v.copy(p).applyMatrix4(exBkt.matrixWorld);const d=_v.y-floorAt(_v.x,_v.z);if(d<lo)lo=d}return lo}
 const exTip=o=>o.copy(EX_TIP).applyMatrix4(exBkt.matrixWorld);
 
 /* trench colliders (below ground, only active in the trench level) */
 const pitColG=new THREE.Group();scene.add(pitColG);
 {const cx=(PIT.x0+PIT.x1)/2,cz=(PIT.z0+PIT.z1)/2,hw=(PIT.x1-PIT.x0)/2,hl=(PIT.z1-PIT.z0)/2,hd=PIT.d/2;
-  for(const s of [-1,1]){col(pitColG,cx+s*(hw+0.5),-hd,cz,0.5,hd,hl+1,{dyn:false,mach:'pit',mu:.6});col(pitColG,cx,-hd,cz+s*(hl+0.5),hw+1,hd,0.5,{dyn:false,mach:'pit',mu:.6})}
+  for(const s of [-1,1]){col(pitColG,cx+s*(hw+0.5),-hd,cz,0.5,hd,hl+1,{dyn:false,mach:'pit:trench',mu:.6});col(pitColG,cx,-hd,cz+s*(hl+0.5),hw+1,hd,0.5,{dyn:false,mach:'pit:trench',mu:.6})}
   pitColG.updateMatrixWorld(true)}
+function zoneFrame(rc,g,color=0xF2B01E){const w=rc.x1-rc.x0,l=rc.z1-rc.z0,cx=(rc.x0+rc.x1)/2,cz=(rc.z0+rc.z1)/2;
+  for(const [a,b,x,z] of [[w,0.2,cx,rc.z0],[w,0.2,cx,rc.z1],[0.2,l,rc.x0,cz],[0.2,l,rc.x1,cz]])stripe(a,b,color,x,z,g,.9);stripe(w,l,color,cx,cz,g,.12);return g}
+const spoilPG=zoneFrame(SPOIL_P,new THREE.Group());scene.add(spoilPG);
+// trim level: 1 m band around the pond rim that has to be cleared
+const RIMW=1.0,trimG=new THREE.Group();scene.add(trimG);
+{const q=PITS.pond,w=q.x1-q.x0+2*RIMW,l=q.z1-q.z0,cx=(q.x0+q.x1)/2,cz=(q.z0+q.z1)/2;
+  for(const [a,b,x,z] of [[w,RIMW,cx,q.z0-RIMW/2],[w,RIMW,cx,q.z1+RIMW/2],[RIMW,l,q.x0-RIMW/2,cz],[RIMW,l,q.x1+RIMW/2,cz]])stripe(a,b,0xFF6A3D,x,z,trimG,.22)}
 const spoilG=new THREE.Group();scene.add(spoilG);
 {const w=SPOIL.x1-SPOIL.x0,l=SPOIL.z1-SPOIL.z0,cx=(SPOIL.x0+SPOIL.x1)/2,cz=(SPOIL.z0+SPOIL.z1)/2;
   for(const [a,b,x,z] of [[w,0.2,cx,SPOIL.z0],[w,0.2,cx,SPOIL.z1],[0.2,l,SPOIL.x0,cz],[0.2,l,SPOIL.x1,cz]])stripe(a,b,0xF2B01E,x,z,spoilG,.9);
@@ -661,7 +682,7 @@ function physics(){
         if(rn<0){qx[i]+=Nx*rn;qy[i]+=Ny*rn;qz[i]+=Nz*rn} // kill bounce into surface
         if(B.bucket&&pen>0.0015)bc+=pen}}
     // ground + bounds
-    for(let i=0;i<N;i++){const fl=pitOn&&px[i]>PIT.x0&&px[i]<PIT.x1&&pz[i]>PIT.z0&&pz[i]<PIT.z1?R-PIT.d:R;
+    for(let i=0;i<N;i++){const fl=(PT?pitFloor(px[i],pz[i]):0)+R;
       if(py[i]<fl){py[i]=fl;qy[i]=fl;qx[i]+=(px[i]-qx[i])*.4;qz[i]+=(pz[i]-qz[i])*.4}
       if(px[i]>BOUND+2)px[i]=BOUND+2;else if(px[i]<-BOUND-2)px[i]=-BOUND-2;if(pz[i]>BOUND+2)pz[i]=BOUND+2;else if(pz[i]<-BOUND-2)pz[i]=-BOUND-2}
   }
@@ -784,11 +805,13 @@ function countSoil(){bucketInv.copy(activeBucket().matrixWorld).invert();const b
 function refreshBodies(first){for(const b of bodies)if(b.dyn||first)refreshBody(b,first)}
 const TRUCK0={x:10,z:-6,rot:Math.PI/2};
 function placeTruck(t){truckG.position.set(t.x,0,t.z);truckG.rotation.y=t.rot;truckG.updateMatrixWorld(true);truckInv.copy(truckG.matrixWorld).invert()}
-function setScene(ex,truck,pit){truckOn=truck;pitOn=pit;placeTruck(lv.truckAt||TRUCK0);truckG.visible=truck;rearG.visible=frontG.visible=!ex;exG.visible=ex;pitG.visible=pit;pitLid.visible=!pit;spoilG.visible=pit;
-  for(const b of bodies)b.off=b.truck?!truck:b.mach==='ex'?!ex:b.mach==='pit'?!pit:ex}
+function setScene(ex,truck,pitId){truckOn=truck;PT=pitId?PITS[pitId]:null;placeTruck(lv.truckAt||TRUCK0);truckG.visible=truck;rearG.visible=frontG.visible=!ex;exG.visible=ex;
+  pitG.visible=pitId==='trench';pondG.visible=pitId==='pond';pitLids.trench.visible=pitId!=='trench';pitLids.pond.visible=pitId!=='pond';
+  spoilG.visible=pitId==='trench';spoilPG.visible=pitId==='pond';trimG.visible=!!lv.trim;
+  for(const b of bodies)b.off=b.truck?!truck:b.mach==='ex'?!ex:b.mach.startsWith('pit:')?b.mach!=='pit:'+pitId:ex}
 
 /* ---------- excavator stepping ---------- */
-let gndHits=0,exStrike=false;
+let gndHits=0,exStrike=false,exLowPrev=9,exVd=0;   // exVd: bucket's downward speed toward the surface while clear of it
 function exCollides(){for(const [pts,g] of [[exBktPts,exBkt],[exArmPts,exArm],[exBodyPts,exG],[exUpPts,exUp]])for(const p of pts){_b.copy(p).applyMatrix4(g.matrixWorld);if(hitsTruck(_b))return 'truck';if(Math.abs(_b.x)>BOUND+2||Math.abs(_b.z)>BOUND+2)return 'wall'}return null}
 function stepEx(dt,inp){const S={...E},k=Math.max(0.35,1/(1+bucketContacts*0.3));   // digging into soil slows every joint (never below 35%)
   E.sw+=inp.swing*EXR.sw*dt*k;
@@ -800,25 +823,42 @@ function stepEx(dt,inp){const S={...E},k=Math.max(0.35,1/(1+bucketContacts*0.3))
   if(exBucketLow()<-0.03){hitG=true;   // undo the offending joints one at a time (boom first), so the bucket can still drag along the floor
     for(const j of ['bm','ar','bk','sw']){E[j]=S[j];exApplyT();if(exBucketLow()>=-0.03)break}
     if(exBucketLow()<-0.03){E.bm=Math.min(EXLIM.bm[1],E.bm+0.3*DEG);exApplyT()}}
-  if(hitG&&!exStrike&&state==='run'&&Math.abs(inp.boom)+Math.abs(inp.arm)+Math.abs(inp.swing)>0.3)gndHits++;
+  if(hitG&&!exStrike&&state==='run'&&exVd>1.2){gndHits++;toast('บุ้งกี๋กระแทก!')}   // gentle contact/scraping is fine, arriving fast counts
   exStrike=hitG;
   const tv=inp.brake?0:inp.travel*EXR.v;E.v+=clamp(tv-E.v,-3*dt,3*dt);E.v/=(1+bucketContacts*0.3);
   E.hd+=inp.turn*EXR.turn*dt;E.x+=Math.cos(E.hd)*E.v*dt;E.z+=-Math.sin(E.hd)*E.v*dt;
   exApplyT();
   const c=exCollides();
-  if(c){Object.assign(E,S);E.v=0;exApplyT();if(!wasHit&&state==='run'){if(c==='truck'){hits++;toast('ชนรถบรรทุก!')}else toast('ถึงแนวกั้น',true)}wasHit=true}else wasHit=false}
-function buildPit(){N=0;
-  for(let k=0;k<3;k++){const y=-PIT.d+R+0.02+k*0.37,o=(k%2)*0.2;
-    for(let x=PIT.x0+R+0.03+o*0.5;x<=PIT.x1-R-0.03;x+=0.41)for(let z=PIT.z0+R+0.03+o;z<=PIT.z1-R-0.03;z+=0.41){if(N>=MAXN)break;
-      px[N]=qx[N]=x;py[N]=qy[N]=y;pz[N]=qz[N]=z;lifted[N]=spilled[N]=0;N++}}
+  if(c){Object.assign(E,S);E.v=0;exApplyT();if(!wasHit&&state==='run'){if(c==='truck'){hits++;toast('ชนรถบรรทุก!')}else toast('ถึงแนวกั้น',true)}wasHit=true}else wasHit=false;
+  const lowNow=exBucketLow();exVd=hitG?0:exVd*0.7+0.3*(exLowPrev-lowNow)/dt;exLowPrev=lowNow}
+const addP=(x,y,z)=>{if(N>=MAXN)return;px[N]=qx[N]=x;py[N]=qy[N]=y;pz[N]=qz[N]=z;lifted[N]=spilled[N]=0;N++};
+function fillPit(){const p=PT;N=0;   // loose soil filling the excavation up to ground level
+  for(let k=0;;k++){const y=-p.d+R+0.02+k*0.37;if(y>0.02)break;const o=(k%2)*0.2;
+    for(let x=p.x0+R+0.03+o*0.5;x<=p.x1-R-0.03;x+=0.41)for(let z=p.z0+R+0.03+o;z<=p.z1-R-0.03;z+=0.41)if(pitFloor(x,z)<=y-R+0.01)addP(x,y,z)}
   soil.count=N}
-// trench quality: share of trench soil removed, depth per 1 m segment (from the soil volume left in it), spoil inside the marked zone
-function pitSeg(x,y,z){return x>PIT.x0&&x<PIT.x1&&z>PIT.z0&&z<PIT.z1&&y<0.05?Math.min(4,Math.floor((z-PIT.z0)/((PIT.z1-PIT.z0)/5))):-1}
-function trenchStats(){let rem=0,zone=0;const seg=[0,0,0,0,0];
-  for(let i=0;i<N;i++){const x=px[i],y=py[i],z=pz[i],k=pitSeg(x,y,z);
-    if(k>=0){rem++;seg[k]++}else if(x>SPOIL.x0&&x<SPOIL.x1&&z>SPOIL.z0&&z<SPOIL.z1&&y<1.5)zone++}
-  const p0=G.p0||1,s0=G.seg0||[1,1,1,1,1],removed=Math.max(0,p0-rem),dep=seg.map((n,k)=>PIT.d*clamp(1-n/(s0[k]||1),0,1));
-  return {dug:clamp(removed/p0,0,1),zone:removed?Math.min(1,zone/removed):0,avg:dep.reduce((a,b)=>a+b,0)/5,range:Math.max(...dep)-Math.min(...dep),rem}}
+const LUMPS=[[-1.4,-10.05],[1.3,-10.05],[-3.05,-7.6],[3.05,-6.0],[3.05,-8.7],[-1.0,-3.95]];
+function buildTrim(){const p=PT,r=p.d/p.m;N=0;   // pond already dug: a loose layer left on the banks + spoil lumps on the rim
+  for(let t=0.25;t<r-0.1;t+=0.42){
+    for(let x=p.x0+t+0.25;x<=p.x1-t-0.25;x+=0.42)for(const z of [p.z0+t,p.z1-t])addP(x,pitFloor(x,z)+R+0.02,z);
+    for(let z=p.z0+t+0.67;z<=p.z1-t-0.67;z+=0.42)for(const x of [p.x0+t,p.x1-t])addP(x,pitFloor(x,z)+R+0.02,z)}
+  for(const [x,z] of LUMPS)for(const [dx,dy,dz] of [[-0.21,0,-0.21],[0.21,0,-0.21],[0,0,0.21],[0,0.37,0]])addP(x+dx,R+0.02+dy,z+dz);
+  soil.count=N}
+// excavation quality: share removed, depth per cell (from the soil volume left in it), spoil inside the level's zone
+function pitCell(x,y,z){const p=PT;if(!(x>p.x0&&x<p.x1&&z>p.z0&&z<p.z1&&y<0.05))return -1;
+  const i=Math.min(p.nx-1,Math.floor((x-p.x0)/((p.x1-p.x0)/p.nx))),k=Math.min(p.nz-1,Math.floor((z-p.z0)/((p.z1-p.z0)/p.nz)));return k*p.nx+i}
+const inRect=(rc,x,z)=>x>rc.x0&&x<rc.x1&&z>rc.z0&&z<rc.z1;
+function pitStats(){const p=PT,nc=p.nx*p.nz,seg=new Array(nc).fill(0),sp=lv.spoil;let rem=0,zone=0;
+  for(let i=0;i<N;i++){const x=px[i],y=py[i],z=pz[i],k=pitCell(x,y,z);
+    if(k>=0){rem++;seg[k]++}else if(sp&&inRect(sp,x,z)&&y<1.5)zone++}
+  const p0=G.p0||1,s0=G.seg0||seg.map(()=>1),removed=Math.max(0,p0-rem),dep=seg.map((n,k)=>p.d*clamp(1-n/(s0[k]||1),0,1));
+  return {dug:clamp(removed/p0,0,1),zone:removed?Math.min(1,zone/removed):0,avg:dep.reduce((a,b)=>a+b,0)/nc,range:Math.max(...dep)-Math.min(...dep),rem}}
+function pitSetup(){const nc=PT.nx*PT.nz,s0=new Array(nc).fill(0);let n=0;for(let i=0;i<N;i++){const k=pitCell(px[i],py[i],pz[i]);if(k>=0){n++;s0[k]++}}G={p0:n,seg0:s0,hold:0};G.st=pitStats()}
+// trim level: what is still on the banks / rim, what fell to the bottom
+function trimClass(x,y,z){const p=PT,r=p.d/p.m;
+  if(x>p.x0&&x<p.x1&&z>p.z0&&z<p.z1)return Math.min(x-p.x0,p.x1-x,z-p.z0,p.z1-z)<r-0.05?(y<0.3?'bank':''):'bottom';
+  const ex=Math.max(p.x0-x,0,x-p.x1),ez=Math.max(p.z0-z,0,z-p.z1);return Math.hypot(ex,ez)<RIMW+0.1&&y<1.2?'rim':lv.spoil&&inRect(lv.spoil,x,z)?'zone':''}
+function trimStats(){const c={bank:0,rim:0,bottom:0,zone:0};for(let i=0;i<N;i++){const k=trimClass(px[i],py[i],pz[i]);if(k)c[k]++}
+  return {bank:clamp(1-c.bank/(G.bank0||1),0,1),rim:clamp(1-c.rim/(G.rim0||1),0,1),bottom:c.bottom*TPP,zone:c.zone}}   // soil shoved from the bank onto the rim counts against the rim
 
 /* ---------- level helpers ---------- */
 const fmtS=s=>{s=Math.max(0,s);const m=Math.floor(s/60);return m+':'+(s-m*60).toFixed(1).padStart(4,'0')};
@@ -845,7 +885,7 @@ const dumpScore=d=>150*d.frac+(d.gap<0.2?60:80*lin(d.gap,1.2,2.7))+40*lin(Math.a
 
 /* ---------- levels ---------- */
 const START={x:0,z:0,thr:Math.PI/2};
-const LV_ORDER=['slalom','fill','dump','mission','ex_ctrl','ex_trench','ex_load'];
+const LV_ORDER=['slalom','fill','dump','mission','ex_ctrl','ex_trench','ex_pit','ex_trim','ex_load'];
 const num=(v,d=0)=>v===''||v==null||isNaN(+v)?d:+v;
 const LEVELS={
 slalom:{id:'slalom',n:'ด่าน 1',name:'ขับหลบกรวย',limit:150,pile:false,truck:false,start:{x:0,z:30,thr:Math.PI/2},grades:[900,750,550],
@@ -956,25 +996,61 @@ ex_ctrl:{id:'ex_ctrl',machine:'ex',n:'รถขุด 1',name:'ฝึกคั�
       note:ok&&T<=60?'คล่องมาก ใช้หลายคันโยกพร้อมกันได้ดี พร้อมไปด่านขุดร่อง':'ฝึกขยับสองคันโยกพร้อมกันให้เป็นธรรมชาติ',m:{tgt:G.i,gnd:gndHits}}},
   key:r=>`${r.dur} s · เป้า ${r.tgt??0}/6 · กระแทก ${r.gnd??0}`},
 
-ex_trench:{id:'ex_trench',machine:'ex',n:'รถขุด 2',name:'ขุดร่องตามแนว',limit:360,pile:false,pit:true,truck:false,noTrim:true,start:{x:0,z:0.6,hd:Math.PI/2},grades:[900,750,550],
+ex_trench:{id:'ex_trench',machine:'ex',n:'รถขุด 2',name:'ขุดร่องตามแนว',limit:360,pile:false,pit:'trench',spoil:SPOIL,truck:false,noTrim:true,start:{x:0,z:0.6,hd:Math.PI/2},grades:[900,750,550],
   brief:'ขุดร่องยาว 4 m ลึก 1 m ตามแนวที่กำหนด วางดินในกรอบด้านขวา วัดดินที่ขุดออก ความลึก ความเรียบของก้นร่อง และตำแหน่งกองดิน',
   task:'ขุดร่องตามแนวให้ลึก <b class="num">1.0</b> m ตลอดแนว แล้วหมุนป้อมไปเทดินใน<b>กรอบเหลืองด้านขวา</b>',
   tip:'เทคนิค: เริ่มขุดจากปลายร่องที่ไกลแล้วไล่เข้าหาตัวรถ ลดบูมให้ฟันบุ้งกี๋จิกดิน ดึงแขนเข้าพร้อมหุบบุ้งกี๋ ยกขึ้นตรงๆ ก่อนหมุนป้อม เทห่างขอบร่องอย่างน้อย 1.5 m ดูค่า "สูงปลายบุ้งกี๋" ติดลบใกล้ −1.0 m',
   labels:['เวลา','ลึกเฉลี่ย','ลงกอง'],
-  setup(){const s0=[0,0,0,0,0];let n=0;for(let i=0;i<N;i++){const k=pitSeg(px[i],py[i],pz[i]);if(k>=0){n++;s0[k]++}}G={p0:n,seg0:s0,hold:0};G.st=trenchStats()},
-  tick(dt){G.st=trenchStats();if(G.st.dug>=0.95&&inBucket<2){G.hold+=dt;if(G.hold>1.5)finish(true)}else G.hold=0},
-  canSubmit(){return (G.st||trenchStats()).dug>=0.85&&inBucket<2},
-  hud(){const s=G.st||trenchStats(),tl=this.limit-elapsed;
+  setup(){pitSetup()},
+  tick(dt){G.st=pitStats();if(G.st.dug>=0.95&&inBucket<2){G.hold+=dt;if(G.hold>1.5)finish(true)}else G.hold=0},
+  canSubmit(){return (G.st||pitStats()).dug>=0.85&&inBucket<2},
+  hud(){const s=G.st||pitStats(),tl=this.limit-elapsed;
     return{big:Math.round(s.dug*100)+'%',of:'ขุดออก',pct:s.dug,s:[fmt(tl),s.avg.toFixed(2)+' m',Math.round(s.zone*100)+'%'],bad:[tl<60,s.dug>0.5&&s.avg<0.8,s.dug>0.1&&s.zone<0.7],
       hint:inBucket>=3?'ยกบุ้งกี๋ขึ้นแล้วหมุนป้อมไปเทในกรอบเหลืองด้านขวา':this.canSubmit()?'ขุดได้ตามเกณฑ์แล้ว เก็บงานต่อ หรือกด Enter / ปุ่ม ส่งงาน':s.dug<0.85?'ลดบูม ยืดแขน แล้วดึงแขนเข้าพร้อมหุบบุ้งกี๋':'เก็บก้นร่องให้เรียบ แล้วเทบุ้งกี๋ให้หมด'}},
-  result(ok){const s=trenchStats(),T=elapsed,bonus=ok?100*lin(T,150,300):0,score=450*s.dug+250*s.zone*Math.min(1,s.dug*3)+200*s.dug*lin(s.range,0.1,0.6)+bonus;
+  result(ok){const s=pitStats(),T=elapsed,bonus=ok?100*lin(T,150,300):0,score=450*s.dug+250*s.zone*Math.min(1,s.dug*3)+200*s.dug*lin(s.range,0.1,0.6)+bonus;
     return{score,title:ok?'ขุดร่องเสร็จ':'หมดเวลา',
       rows:[['ดินที่ขุดออก',pct(s.dug)],['ความลึกเฉลี่ย (เป้า 1.0 m)',s.avg.toFixed(2)+' m'],['ความลึกต่างกันตลอดแนว',s.range.toFixed(2)+' m'],['ดินลงกองที่กำหนด',pct(s.zone)],['เวลาที่ใช้',fmt(T)+(bonus?` (+${Math.round(bonus)})`:'')]],
       note:s.dug<0.85?'ยังขุดไม่ถึงก้นร่อง ลดบูมให้ลึกกว่าเดิมและดึงแขนเข้าจนสุด':s.zone<0.7?'ดินไปตกนอกกรอบ หมุนป้อมให้ถึงกรอบก่อนกางบุ้งกี๋':s.range>0.3?'ก้นร่องยังไม่เรียบ ลากบุ้งกี๋ขนานพื้นเก็บช่วงที่ตื้น':'ขุดร่องได้ลึกและเรียบ พร้อมไปด่านขุดใส่รถบรรทุก',
       m:{dug:Math.round(s.dug*100),depth:s.avg,drange:s.range,zone:Math.round(s.zone*100),gnd:gndHits}}},
   key:r=>`ขุด ${r.dug??0}% · ลึก ${num(r.depth).toFixed(2)} m · ลงกอง ${r.zone??0}%`},
 
-ex_load:{id:'ex_load',machine:'ex',n:'รถขุด 3',name:'ขุดใส่รถบรรทุก',limit:300,pile:true,truck:true,truckAt:{x:7,z:-7,rot:0},start:{x:7.5,z:-13,hd:Math.PI},grades:[900,750,550],
+ex_pit:{id:'ex_pit',machine:'ex',n:'รถขุด 3',name:'ขุดบ่อ',limit:480,pile:false,pit:'pond',spoil:SPOIL_P,noTrim:true,start:{x:0,z:-1,hd:Math.PI/2},grades:[900,750,550],
+  brief:'ขุดบ่อ 5×5 m ลึก 1.2 m ขอบลาด 1:1 ให้ก้นบ่อเรียบเสมอกัน วางดินในกรอบด้านขวา วัดดินที่ขุดออก ความลึกและความเรียบของก้นบ่อ และตำแหน่งกองดิน',
+  task:'ขุดบ่อให้ลึก <b class="num">1.2</b> m ทั่วทั้งบ่อ ก้นบ่อเรียบ แล้วหมุนป้อมไปเทดินใน<b>กรอบเหลืองด้านขวา</b>',
+  tip:'เทคนิค: แบ่งบ่อเป็นช่อง ขุดทีละชั้นจากด้านไกลเข้าหาตัวรถ ตักชั้นบนทั่วบ่อก่อนแล้วค่อยลงชั้นล่าง ใช้การหมุนป้อมซ้าย–ขวาเล็กน้อยเพื่อเก็บด้านข้าง ดูค่าปลายบุ้งกี๋ใกล้ −1.2 m ที่ก้นบ่อ',
+  labels:['เวลา','ลึกเฉลี่ย','ลงกอง'],
+  setup(){pitSetup()},
+  tick(dt){G.st=pitStats();if(G.st.dug>=0.95&&inBucket<2){G.hold+=dt;if(G.hold>1.5)finish(true)}else G.hold=0},
+  canSubmit(){return (G.st||pitStats()).dug>=0.85&&inBucket<2},
+  hud(){const s=G.st||pitStats(),tl=this.limit-elapsed;
+    return{big:Math.round(s.dug*100)+'%',of:'ขุดออก',pct:s.dug,s:[fmt(tl),s.avg.toFixed(2)+' m',Math.round(s.zone*100)+'%'],bad:[tl<60,s.dug>0.5&&s.avg<1.0,s.dug>0.1&&s.zone<0.7],
+      hint:inBucket>=3?'ยกบุ้งกี๋ขึ้นแล้วหมุนป้อมไปเทในกรอบเหลืองด้านขวา':this.canSubmit()?'ขุดได้ตามเกณฑ์แล้ว เก็บก้นบ่อต่อ หรือกด Enter / ปุ่ม ส่งงาน':'ขุดทีละชั้น ลดบูม ดึงแขนเข้าพร้อมหุบบุ้งกี๋'}},
+  result(ok){const s=pitStats(),T=elapsed,bonus=ok?100*lin(T,240,420):0,score=400*s.dug+250*s.zone*Math.min(1,s.dug*3)+250*s.dug*lin(s.range,0.15,0.7)+bonus;
+    return{score,title:ok?'ขุดบ่อเสร็จ':'หมดเวลา',
+      rows:[['ดินที่ขุดออก',pct(s.dug)],['ความลึกเฉลี่ย (เป้า 1.2 m)',s.avg.toFixed(2)+' m'],['ก้นบ่อต่างระดับ',s.range.toFixed(2)+' m'],['ดินลงกองที่กำหนด',pct(s.zone)],['เวลาที่ใช้',fmt(T)+(bonus?` (+${Math.round(bonus)})`:'')]],
+      note:s.dug<0.85?'ยังเหลือดินในบ่อ ขุดให้ทั่วทุกช่อง โดยเฉพาะมุมบ่อ':s.range>0.35?'ก้นบ่อยังไม่เรียบ บางช่องยังตื้น ลากบุ้งกี๋เก็บให้ระดับเดียวกัน':s.zone<0.7?'ดินไปตกนอกกรอบ หมุนป้อมให้ถึงกรอบก่อนกางบุ้งกี๋':'ขุดบ่อได้ลึกและเรียบ พร้อมไปด่านแต่งขอบบ่อ',
+      m:{dug:Math.round(s.dug*100),depth:s.avg,drange:s.range,zone:Math.round(s.zone*100),gnd:gndHits}}},
+  key:r=>`ขุด ${r.dug??0}% · ลึก ${num(r.depth).toFixed(2)} m · ต่างระดับ ${num(r.drange).toFixed(2)} m`},
+
+ex_trim:{id:'ex_trim',machine:'ex',n:'รถขุด 4',name:'แต่งขอบบ่อ',limit:360,pile:false,pit:'pond',trim:true,spoil:SPOIL_P,noTrim:true,start:{x:0,z:-1,hd:Math.PI/2},grades:[900,750,550],
+  brief:'บ่อขุดเสร็จแล้ว แต่ขอบลาดยังมีดินร่วนและมีกองดินค้างที่ปากบ่อ เก็บให้สะอาดโดยไม่ให้ดินหล่นลงก้นบ่อ และไม่ให้บุ้งกี๋กระแทกขอบลาด',
+  task:'เก็บดินร่วนบน<b>ขอบลาด</b>และกองดินใน<b>แถบสีส้มรอบปากบ่อ</b> ไปเทในกรอบเหลือง อย่าให้ดินหล่นลงก้นบ่อ',
+  tip:'เทคนิค: วางบุ้งกี๋ขนานกับขอบลาด ลากขึ้นจากล่างสู่บนเบาๆ พร้อมหุบบุ้งกี๋ ใช้บูมกับแขนร่วมกันให้ปลายบุ้งกี๋เดินตามแนวลาด ไม่กดบุ้งกี๋ลงแรงจนกระแทกขอบ',
+  labels:['เวลา','ลาด/ปากบ่อ','ตกก้นบ่อ'],
+  setup(){G={hold:0};let b=0,r=0;for(let i=0;i<N;i++){const k=trimClass(px[i],py[i],pz[i]);if(k==='bank')b++;else if(k==='rim')r++}G.bank0=b;G.rim0=r;G.st=trimStats()},
+  tick(dt){G.st=trimStats();if(G.st.bank>=0.98&&G.st.rim>=0.98&&inBucket<2){G.hold+=dt;if(G.hold>1.5)finish(true)}else G.hold=0},
+  canSubmit(){const s=G.st||trimStats();return s.bank>=0.9&&s.rim>=0.9&&inBucket<2},
+  hud(){const s=G.st||trimStats(),tl=this.limit-elapsed;
+    return{big:Math.round(Math.min(s.bank,s.rim)*100)+'%',of:'ขอบบ่อเรียบร้อย',pct:(s.bank+s.rim)/2,s:[fmt(tl),Math.round(s.bank*100)+'/'+Math.round(s.rim*100)+'%',s.bottom.toFixed(1)+' t'],bad:[tl<60,false,s.bottom>1],
+      hint:inBucket>=3?'ยกบุ้งกี๋ขึ้นช้าๆ แล้วหมุนป้อมไปเทในกรอบเหลือง':this.canSubmit()?'เก็บงานเรียบร้อยแล้ว กด Enter / ปุ่ม ส่งงาน':s.rim<0.9?'เก็บกองดินในแถบสีส้มรอบปากบ่อ':'ลากบุ้งกี๋ขึ้นตามขอบลาดเบาๆ พร้อมหุบบุ้งกี๋'}},
+  result(ok){const s=trimStats(),T=elapsed,bonus=ok?100*lin(T,180,330):0,score=350*s.bank+250*s.rim+150*lin(s.bottom,0.3,1.5)+150*lin(gndHits,2,8)+bonus;
+    return{score,title:ok?'แต่งขอบบ่อเสร็จ':'หมดเวลา',
+      rows:[['ขอบลาดสะอาด',pct(s.bank)],['ปากบ่อสะอาด',pct(s.rim)],['ดินตกก้นบ่อ',s.bottom.toFixed(1)+' t'],['บุ้งกี๋กระแทกขอบ',gndHits+' ครั้ง'],['เวลาที่ใช้',fmt(T)+(bonus?` (+${Math.round(bonus)})`:'')]],
+      note:s.bottom>1?'ดินหล่นลงก้นบ่อมาก หุบบุ้งกี๋ให้รับดินไว้ขณะลากขึ้น อย่าดันดินลง':gndHits>5?'บุ้งกี๋กระแทกขอบลาดบ่อย ลดความเร็วตอนใกล้ผิวลาด':s.bank<0.9?'ขอบลาดยังมีดินค้าง ลากบุ้งกี๋ให้ทั่วทั้งสี่ด้าน':s.rim<0.9?'ปากบ่อยังมีกองดิน เก็บให้หมดแถบสีส้ม':'แต่งขอบบ่อได้เรียบร้อย พร้อมไปด่านขุดใส่รถบรรทุก',
+      m:{slope:Math.round(s.bank*100),rim:Math.round(s.rim*100),bottom:s.bottom,gnd:gndHits}}},
+  key:r=>`ขอบลาด ${r.slope??0}% · ปากบ่อ ${r.rim??0}% · ตกก้นบ่อ ${num(r.bottom).toFixed(1)} t`},
+
+ex_load:{id:'ex_load',machine:'ex',n:'รถขุด 5',name:'ขุดใส่รถบรรทุก',limit:300,pile:true,truck:true,truckAt:{x:7,z:-7,rot:0},start:{x:7.5,z:-13,hd:Math.PI},grades:[900,750,550],
   brief:`ขุดดินจากกองแล้วหมุนป้อมไปเทใส่รถบรรทุกให้ครบ ${EX_TARGET} ตันใน 5 นาที หักคะแนนเมื่อดินหกหรือชนรถ`,
   task:`ขุดดินจากกองแล้วหมุนป้อมไปเทใส่กระบะให้ครบ <b class="num">${EX_TARGET}</b> ตัน`,
   tip:'เทคนิค: ยกบูมขณะหมุนป้อมเพื่อประหยัดเวลา ให้ปลายบุ้งกี๋สูงกว่าขอบกระบะ 2.8 m ก่อนหมุนเข้าหารถ เทกลางกระบะ แล้วหมุนกลับพร้อมลดบูม',
@@ -1018,6 +1094,16 @@ const CRIT={
     {k:'ก้นร่องเรียบ (ลึกต่างกันไม่เกิน 0.3 m)',f:r=>num(r.drange,9)<=0.3,tip:'ขุดทีละช่วงเท่าๆ กัน และลากบุ้งกี๋ขนานพื้นเก็บช่วงที่ตื้น'},
     {k:'ดินลงกองที่กำหนดอย่างน้อย 70%',f:r=>num(r.zone)>=70,tip:'หมุนป้อมไปเทในกรอบเหลืองด้านขวา ห่างขอบร่อง อย่าเทกลับลงร่อง'},
     {k:'เสร็จในเวลา',f:r=>r.ok,tip:'ขุดให้เต็มบุ้งกี๋ทุกครั้ง ลดจำนวนรอบ'}],
+  ex_pit:[{k:'ขุดออกอย่างน้อย 85%',f:r=>num(r.dug)>=85,tip:'ขุดให้ทั่วทุกช่องของบ่อ รวมถึงมุมบ่อ ขุดทีละชั้น'},
+    {k:'ความลึกเฉลี่ยอย่างน้อย 1.0 m',f:r=>num(r.depth)>=1.0,tip:'ลงชั้นล่างให้ถึงก้นบ่อ ดูค่าปลายบุ้งกี๋ใกล้ −1.2 m'},
+    {k:'ก้นบ่อเรียบ (ต่างระดับไม่เกิน 0.35 m)',f:r=>num(r.drange,9)<=0.35,tip:'เก็บช่องที่ยังตื้นให้เท่ากัน ลากบุ้งกี๋ขนานก้นบ่อ'},
+    {k:'ดินลงกองที่กำหนดอย่างน้อย 70%',f:r=>num(r.zone)>=70,tip:'ยกบุ้งกี๋ให้พ้นขอบบ่อแล้วหมุนป้อมไปเทในกรอบเหลือง'},
+    {k:'เสร็จในเวลา',f:r=>r.ok,tip:'ขุดให้เต็มบุ้งกี๋ทุกครั้งและหมุนป้อมไปกลับให้สั้นลง'}],
+  ex_trim:[{k:'ขอบลาดสะอาดอย่างน้อย 90%',f:r=>num(r.slope)>=90,tip:'ลากบุ้งกี๋ขึ้นตามขอบลาดให้ครบทั้งสี่ด้าน'},
+    {k:'ปากบ่อสะอาดอย่างน้อย 90%',f:r=>num(r.rim)>=90,tip:'เก็บกองดินในแถบสีส้มรอบปากบ่อให้หมด'},
+    {k:'ดินตกก้นบ่อไม่เกิน 1 t',f:r=>num(r.bottom,9)<=1,tip:'หุบบุ้งกี๋รับดินไว้ขณะลากขึ้น อย่าดันดินลงบ่อ'},
+    {k:'บุ้งกี๋กระแทกขอบไม่เกิน 5 ครั้ง',f:r=>num(r.gnd,99)<=5,tip:'ชะลอบูมเมื่อปลายบุ้งกี๋ใกล้ผิวลาด ใช้การสัมผัสเบาๆ'},
+    {k:'เสร็จในเวลา',f:r=>r.ok,tip:'วางแผนเก็บทีละด้าน ไม่วนกลับไปมา'}],
   ex_load:[{k:`บรรทุกครบ ${EX_TARGET} t`,f:r=>r.ok,tip:'ขุดให้เต็มบุ้งกี๋ทุกครั้ง และลดเวลาหมุนไปกลับ'},
     {k:'ดินหกไม่เกิน 1 t',f:r=>num(r.spill,9)<=1,tip:'หุบบุ้งกี๋ให้สุดก่อนยก และหมุนป้อมอย่างนุ่มนวล'},noHit,
     {k:'เวลาไม่เกิน 4 นาที',f:r=>num(r.dur,999)<=240,tip:'ยกบูมพร้อมหมุนป้อม ไม่ทำทีละขั้น'}]};
@@ -1061,7 +1147,7 @@ const fmt=s=>{s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStar
 let hudT=0;
 function setupHud(){$('mTag').textContent=lv.n+' · '+lv.name;$('mTask').innerHTML=lv.task;lv.labels.forEach((t,i)=>{$('s'+i+'l').textContent=t});
   const ex=isEx();$('glBh').textContent=ex?'ปลายบุ้งกี๋':'สูงบุ้งกี๋';$('glArt').textContent=ex?'แขน':'หักเลี้ยว';
-  $('bhSub').textContent=truckOn?'ขอบกระบะ '+RIM.toFixed(1):pitOn?'เป้าลึก −'+PIT.d.toFixed(1):'';
+  $('bhSub').textContent=truckOn?'ขอบกระบะ '+RIM.toFixed(1):PT?'เป้าลึก −'+PT.d.toFixed(1):'';
   $('lstick').querySelector('.cap').textContent=ex?'แขน · หมุนป้อม':'ขับ · เลี้ยว';
   $('rstick').querySelector('.cap').textContent=ex?'บูม · บุ้งกี๋ (ISO)':'คันโยก: ดึง=ยก · ซ้าย=หงาย';
   $('travel').hidden=!(ex&&!$('lstick').hidden);hudT=0}
@@ -1071,7 +1157,7 @@ function hud(dt){hudT-=dt;if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').classN
   $('mHint').textContent=state==='run'?h.hint:'';$('bSubmit').hidden=!(state==='run'&&lv.canSubmit&&lv.canSubmit());
   const ex=isEx(),vv=ex?E.v:L.v,kmh=Math.abs(vv)*3.6;$('spd').textContent=kmh.toFixed(0);const g=$('gear');const gr=vv>0.05?'F':vv<-0.05?'R':'N';g.textContent=gr;g.className=gr;
   const lo=ex?exTip(_c).y:Math.max(0,bucketLowest()),bh=$('bh');bh.innerHTML=(lo<-0.05?'−'+(-lo).toFixed(1):Math.max(0,lo).toFixed(1))+'<small>m</small>';
-  bh.className='v'+(truckOn&&lo>RIM+0.05||pitOn&&lo<-0.8?' clear':'');
+  bh.className='v'+(truckOn&&lo>RIM+0.05||PT&&lo<-PT.d+0.2?' clear':'');
   if(ex){$('boom').textContent=Math.round(E.bm/DEG)+'°';$('buck').textContent=Math.round(E.bk/DEG)+'°';$('art').textContent=Math.round(E.ar/DEG)+'°'}
   else{$('boom').textContent=Math.round(L.beta/DEG)+'°';$('buck').textContent=(L.alpha>0?'+':'')+Math.round(L.alpha/DEG)+'°';
     $('art').textContent=(L.phi>0?'ซ ':L.phi<0?'ข ':'')+Math.abs(Math.round(L.phi/DEG))+'°'}
@@ -1111,7 +1197,7 @@ function finish(ok){if(state!=='run')return;state='done';
 /* CSV export: every trainee on this device; BOM so Excel reads Thai correctly */
 const CSVCOLS=[['cone','ชนกรวย'],['miss','พลาดประตู'],['w1','ตักครั้งที่ 1 (t)'],['w2','ตักครั้งที่ 2 (t)'],['w3','ตักครั้งที่ 3 (t)'],['fill','เติมบุ้งกี๋เฉลี่ย (%)'],
   ['gap','ระยะห่างกระบะเฉลี่ย (m)'],['off','เยื้องกลางกระบะเฉลี่ย (m)'],['ang','มุมเข้าเฉลี่ย (องศา)'],['del','ลงกระบะเฉลี่ย (%)'],['load','ดินบนรถ (t)'],
-  ['tgt','แตะเป้า (จุด)'],['gnd','บุ้งกี๋กระแทกพื้น (ครั้ง)'],['dug','ขุดร่องออก (%)'],['depth','ความลึกร่องเฉลี่ย (m)'],['drange','ความลึกต่างกัน (m)'],['zone','ดินลงกองที่กำหนด (%)']];
+  ['tgt','แตะเป้า (จุด)'],['gnd','บุ้งกี๋กระแทกพื้น (ครั้ง)'],['dug','ขุดร่องออก (%)'],['depth','ความลึกร่องเฉลี่ย (m)'],['drange','ความลึกต่างกัน (m)'],['zone','ดินลงกองที่กำหนด (%)'],['slope','ขอบลาดสะอาด (%)'],['rim','ปากบ่อสะอาด (%)'],['bottom','ดินตกก้นบ่อ (t)']];
 function toCSV(log){const p2=n=>String(n).padStart(2,'0');
   const esc=v=>{if(v==null)return'';if(typeof v==='string'&&/^[=+\-@\t\r]/.test(v))v="'"+v;v=String(v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   const head=['วันที่','เวลา','ผู้ฝึก','ด่าน','คะแนน','เกรด','ผ่านเกณฑ์','สำเร็จ','เวลาที่ใช้ (วินาที)','ชนรถ','ดินหก (t)',...CSVCOLS.map(c=>c[1])];
@@ -1216,10 +1302,10 @@ function settle(n){for(let i=0;i<n;i++){refreshBodies(false);physics()}}
 function reset(id,run){lv=LEVELS[id];lvId=id;store.set('loaderLv',id);const st=lv.start,ex=isEx();
   if(ex){Object.assign(E,{x:st.x,z:st.z,hd:st.hd,sw:0,bm:35*DEG,ar:-100*DEG,bk:-60*DEG,v:0});exApplyT()}
   else{Object.assign(L,{x:st.x,z:st.z,thr:st.thr,phi:0,v:0,beta:-14*DEG,alpha:0});applyT();updCyl()}
-  setScene(ex,!!lv.truck,!!lv.pit);decoG.visible=!ex;slalomG.visible=id==='slalom';padG.visible=!!lv.pad;patch.visible=!!lv.pile;tgtG.visible=id==='ex_ctrl';
+  setScene(ex,!!lv.truck,lv.pit||null);decoG.visible=!ex;slalomG.visible=id==='slalom';padG.visible=!!lv.pad;patch.visible=!!lv.pile;tgtG.visible=id==='ex_ctrl';
   refreshBodies(true);
-  if(lv.pile){buildPile(QUAL[q].n);settle(160)}else if(lv.pit){buildPit();settle(120)}else{N=0;soil.count=0}
-  elapsed=0;hits=0;spillN=0;gndHits=0;exStrike=false;wasHit=false;camYaw=0;bucketContacts=0;lv.setup();
+  if(lv.pile){buildPile(QUAL[q].n);settle(160)}else if(lv.pit){if(lv.trim)buildTrim();else fillPit();settle(120)}else{N=0;soil.count=0}
+  elapsed=0;hits=0;spillN=0;gndHits=0;exStrike=false;exLowPrev=9;wasHit=false;camYaw=0;bucketContacts=0;lv.setup();
   countSoil();drawSoil();updCam(0,true);setupHud();
   for(const o of ['result','menu','help','hist','ready'])$(o).hidden=true;
   state=run?'run':'menu';paused=false;if(!run){buildMenu();$('menu').hidden=false}
