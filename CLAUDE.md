@@ -13,6 +13,7 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 - Mission: load 15 t into the dump truck in 6 min. Penalties: spill (25/t) and truck collisions (50 each). Grades A–D.
 - Inputs: keyboard, Gamepad API, two on-screen touch sticks (right stick uses real loader lever convention: pull back = raise boom, left = curl).
 - Cameras: chase / cab / top.
+- Sound (`SND`): all synthesized with Web Audio, no files; the context starts on the first key/pointer press and suspends when the tab is hidden. Continuous layers set every frame in `SND.tick()` from `lastInp` and joint motion: diesel engine (rpm from throttle, hydraulics, digging), hydraulic whine, relief-valve squeal (lever held but the joint does not move), bucket crunch (`cutLast` / `bucketContacts`), sand-pour hiss (grains falling > 1.2 m/s), track rattle, reverse/travel alarm. One-shots: `SND.hit(kind)` (truck/wall/ground/cone), thud when soil lands in the truck, `SND.ding()` on gates/targets/weighings, `SND.chime(ok)` in `finish()`. Toggle with V or the tools button (`localStorage['loaderSnd']`). `SND.levels` exposes the last layer levels for tests.
 
 ## Phase 2 — done
 - Levels live in the `LEVELS` table (`slalom`, `fill`, `dump`, `mission`), each with `setup/tick/hud/result/key`. `reset(id,run)` builds the scene per level (truck on/off via `setTruck`, pile on/off, slalom course `slalomG`, weigh pad `padG`).

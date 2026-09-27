@@ -195,6 +195,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
   <button class="btn" id="bReset" type="button">เริ่มใหม่<kbd>R</kbd></button>
   <button class="btn" id="bHelp" type="button">วิธีบังคับ<kbd>H</kbd></button>
   <button class="btn" id="bMenu" type="button">เลือกด่าน<kbd>M</kbd></button>
+  <button class="btn" id="bSnd" type="button">เสียง: เปิด<kbd>V</kbd></button>
   <button class="btn" id="bSubmit" type="button" hidden style="border-color:var(--ok)">ส่งงาน<kbd>⏎</kbd></button>
 </div>
 
@@ -237,7 +238,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
         <dt>↑ / ↓</dt><dd>ยก / ลดบูม</dd>
         <dt>← / →</dt><dd>หงาย / คว่ำบุ้งกี๋</dd>
         <dt>Space</dt><dd>เบรก</dd>
-        <dt>C · R · M</dt><dd>กล้อง · เริ่มใหม่ · เมนู</dd>
+        <dt>C · R · M · V</dt><dd>กล้อง · เริ่มใหม่ · เมนู · เปิด/ปิดเสียง</dd>
       </dl></section>
       <section><h3>จอยเกม</h3><dl>
         <dt>RT / LT</dt><dd>เร่ง / ถอย</dd>
@@ -259,6 +260,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
         <dt>← / →</dt><dd>หุบบุ้งกี๋ (ขุด) / กางบุ้งกี๋ (เท)</dd>
         <dt>I / K</dt><dd>เดินหน้า / ถอย ตีนตะขาบ</dd>
         <dt>J / L</dt><dd>เลี้ยวซ้าย / ขวา</dd>
+        <dt>V</dt><dd>เปิด / ปิดเสียง</dd>
       </dl></section>
       <section><h3>รถขุด · จอยเกม (ISO)</h3><dl>
         <dt>ก้านซ้าย ↕</dt><dd>ดัน = แขนออก, ดึง = แขนเข้า</dd>
@@ -761,7 +763,7 @@ function collides(){
 const K={};
 addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
-  if(!K[e.code]){if(e.code==='KeyC')cycleCam();if(e.code==='KeyR'&&(state==='run'||state==='done'))reset(lvId,true);if(e.code==='KeyH')showHelp();
+  if(!K[e.code]){if(e.code==='KeyC')cycleCam();if(e.code==='KeyV')SND.toggle();if(e.code==='KeyR'&&(state==='run'||state==='done'))reset(lvId,true);if(e.code==='KeyH')showHelp();
     if(e.code==='KeyM')showMenu();if(e.code==='Enter'&&state==='run'&&!paused&&lv.canSubmit&&lv.canSubmit())finish(true);if(e.code==='Escape'){if(!$('help').hidden)resume();else if(!$('hist').hidden)closeHist();else if(!$('ready').hidden)$('ready').hidden=true}}
   K[e.code]=true});
 addEventListener('keyup',e=>{K[e.code]=false});
@@ -829,7 +831,7 @@ function stepVehicle(dt,inp){
   L.x+=Math.cos(hm)*L.v*dt;L.z+=-Math.sin(hm)*L.v*dt;L.thr+=w*dt;
   applyT();
   const c=collides();
-  if(c){Object.assign(L,S);L.v=0;applyT();if(!wasHit&&state==='run'){if(c==='truck'){hits++;toast('ชนรถบรรทุก!')}else toast('ถึงแนวกั้น',true)}wasHit=true}else wasHit=false;
+  if(c){Object.assign(L,S);L.v=0;applyT();if(!wasHit&&state==='run'){SND.hit(c);if(c==='truck'){hits++;toast('ชนรถบรรทุก!')}else toast('ถึงแนวกั้น',true)}wasHit=true}else wasHit=false;
   for(const w of wheels)w.g.rotation.z-=L.v*dt/w.r;
   updCyl();
 }
@@ -869,13 +871,13 @@ function stepEx(dt,inp){bktPrev.copy(exBkt.matrixWorld);const S={...E},k=Math.ma
   if(exBucketLow()<-0.03){hitG=true;   // undo the offending joints one at a time (boom first), so the bucket can still drag along the floor
     for(const j of ['bm','ar','bk','sw']){E[j]=S[j];exApplyT();if(exBucketLow()>=-0.03)break}
     if(exBucketLow()<-0.03){E.bm=Math.min(EXLIM.bm[1],E.bm+0.3*DEG);exApplyT()}}
-  if(hitG&&!exStrike&&state==='run'&&exVd>1.2){gndHits++;toast('บุ้งกี๋กระแทก!')}   // gentle contact/scraping is fine, arriving fast counts
+  if(hitG&&!exStrike&&state==='run'&&exVd>1.2){gndHits++;SND.hit('ground');toast('บุ้งกี๋กระแทก!')}   // gentle contact/scraping is fine, arriving fast counts
   exStrike=hitG;
   const tv=inp.brake?0:inp.travel*EXR.v;E.v+=clamp(tv-E.v,-3*dt,3*dt);E.v/=(1+bucketContacts*0.3);
   E.hd+=inp.turn*EXR.turn*dt;E.x+=Math.cos(E.hd)*E.v*dt;E.z+=-Math.sin(E.hd)*E.v*dt;
   exApplyT();
   const c=exCollides();
-  if(c){Object.assign(E,S);E.v=0;exApplyT();if(!wasHit&&state==='run'){if(c==='truck'){hits++;toast('ชนรถบรรทุก!')}else toast('ถึงแนวกั้น',true)}wasHit=true}else wasHit=false;
+  if(c){Object.assign(E,S);E.v=0;exApplyT();if(!wasHit&&state==='run'){SND.hit(c);if(c==='truck'){hits++;toast('ชนรถบรรทุก!')}else toast('ถึงแนวกั้น',true)}wasHit=true}else wasHit=false;
   const lowNow=exBucketLow();exVd=hitG?0:exVd*0.7+0.3*(exLowPrev-lowNow)/dt;exLowPrev=lowNow;
   // packed soil sticks: grains in the bucket ride with it unless the mouth points more than 30° below horizontal (dumping)
   _c.set(0,-1,0).transformDirection(exBkt.matrixWorld);
@@ -985,9 +987,9 @@ slalom:{id:'slalom',n:'ด่าน 1',name:'ขับหลบกรวย',lim
   tip:'เทคนิค: รถตักหักกลางลำ ล้อหลังจะวิ่งตัดโค้งเข้าด้านในกว่าล้อหน้า ให้เริ่มหักเลี้ยวก่อนถึงประตูเล็กน้อย และยกบุ้งกี๋ให้พ้นพื้นระหว่างขับ',
   labels:['เวลา','ชนกรวย','พลาดประตู'],
   setup(){for(const c of slalomCones){c.hit=false;c.g.position.set(c.x,0,c.z);c.g.quaternion.identity()}G={pass:0,miss:0,cones:0,gi:0,pz:L.z}},
-  tick(){for(const c of slalomCones)if(!c.hit&&coneTouch(c)){knock(c);G.cones++;toast('ชนกรวย −60')}
+  tick(){for(const c of slalomCones)if(!c.hit&&coneTouch(c)){knock(c);SND.hit('cone');G.cones++;toast('ชนกรวย −60')}
     while(G.gi<GATES.length&&G.pz>GATES[G.gi].z&&L.z<=GATES[G.gi].z){const gt=GATES[G.gi++];
-      if(Math.abs(L.x-gt.x)<=GHW){G.pass++;toast('ผ่านประตู '+G.gi,true)}else{G.miss++;toast('พลาดประตู −200')}}
+      if(Math.abs(L.x-gt.x)<=GHW){G.pass++;SND.ding();toast('ผ่านประตู '+G.gi,true)}else{G.miss++;toast('พลาดประตู −200')}}
     if(G.pz>FINZ&&L.z<=FINZ){G.miss+=GATES.length-G.gi;G.gi=GATES.length;finish(true)}
     G.pz=L.z},
   hud(){return{big:String(G.pass),of:'/ 4 ประตู',pct:G.gi/GATES.length,s:[fmtS(elapsed),G.cones,G.miss],bad:[elapsed>SLALOM_PAR,G.cones>0,G.miss>0],
@@ -1010,7 +1012,7 @@ fill:{id:'fill',n:'ด่าน 2',name:'ตักให้เต็มบุ้
     if(!G.armed&&b<0.3){G.armed=true;if(G.w.length<3)toast('พร้อมตักครั้งที่ '+(G.w.length+1),true)}
     G.on=Math.abs(L.x-PAD.x)<PAD.h&&Math.abs(L.z-PAD.z)<PAD.h;G.raised=bucketLowest()>0.25;
     if(G.armed&&G.w.length<3&&G.on&&b>=0.5&&G.raised&&Math.abs(L.v)<0.15){G.hold+=dt;
-      if(G.hold>=1){G.w.push(b);G.armed=false;G.hold=0;toast(`ครั้งที่ ${G.w.length}: ${b.toFixed(1)} t · ${pct(b/BCAP)}`,true);if(G.w.length===3)G.end=1.5}}
+      if(G.hold>=1){G.w.push(b);G.armed=false;G.hold=0;SND.ding();toast(`ครั้งที่ ${G.w.length}: ${b.toFixed(1)} t · ${pct(b/BCAP)}`,true);if(G.w.length===3)G.end=1.5}}
     else G.hold=0},
   hud(){const b=inBucket*TPP,last=G.w[G.w.length-1];
     return{big:b.toFixed(1),of:`/ ${BCAP.toFixed(1)} t ในบุ้งกี๋`,pct:b/BCAP,s:[fmt(this.limit-elapsed),G.w.length+' / 3',(spillN*TPP).toFixed(1)+' t'],bad:[this.limit-elapsed<45,false,spillN>0],
@@ -1077,7 +1079,7 @@ ex_ctrl:{id:'ex_ctrl',machine:'ex',n:'รถขุด 1',name:'ฝึกคั�
       t.pole.position.set(t.p.x,h/2,t.p.z);t.pole.scale.y=h;t.done=false;t.m.material=i?mTgtOff:mTgtOn});G={i:0,split:[]}},
   tick(){const t=tgts[G.i];if(!t)return;
     if(exTip(_c).distanceTo(t.p)<0.5){t.done=true;t.m.material=mTgtDone;G.split.push(elapsed);G.i++;
-      if(G.i<tgts.length){tgts[G.i].m.material=mTgtOn;toast(`เป้า ${G.i}/${tgts.length}`,true)}else{toast('ครบทุกเป้า',true);G.end=1}}},
+      SND.ding();if(G.i<tgts.length){tgts[G.i].m.material=mTgtOn;toast(`เป้า ${G.i}/${tgts.length}`,true)}else{toast('ครบทุกเป้า',true);G.end=1}}},
   hud(){const t=tgts[G.i],d=t?exTip(_c).distanceTo(t.p):0;
     return{big:String(G.i),of:`/ ${tgts.length} เป้า`,pct:G.i/tgts.length,s:[fmtS(elapsed),`${G.i}/${tgts.length}`,gndHits],bad:[elapsed>90,false,gndHits>3],
       hint:t?`เป้าที่ ${G.i+1}: ปลายบุ้งกี๋ห่าง ${d.toFixed(1)} m`:'ครบทุกเป้าแล้ว'}},
@@ -1214,10 +1216,72 @@ const lvIds=m=>LV_ORDER.filter(id=>(LEVELS[id].machine||'loader')===m);
 const nextLv=m=>lvIds(m).find(id=>!lvStatus(id).passed);
 let lvId=store.get('loaderLv','slalom');if(!LEVELS[lvId])lvId='slalom';let lv=LEVELS[lvId];
 
+/* ---------- sound: everything synthesized with Web Audio (no files) ---------- */
+let lastInp={thr:0,steer:0,boom:0,buck:0,brake:false,arm:0,swing:0,travel:0,turn:0};
+const SND=(()=>{let ctx=null,lv_={},on=store.get('loaderSnd','1')==='1',M,noise,n={},pv=null,pourN=0,truckPrev=0,thudT=0,beepT=0;
+  const AC=window.AudioContext||window.webkitAudioContext;
+  const gain=(v,to)=>{const g=ctx.createGain();g.gain.value=v;if(to)g.connect(to);return g};
+  const filt=(type,f,Q,to)=>{const b=ctx.createBiquadFilter();b.type=type;b.frequency.value=f;b.Q.value=Q;if(to)b.connect(to);return b};
+  const osc=(type,f,to)=>{const o=ctx.createOscillator();o.type=type;o.frequency.value=f;if(to)o.connect(to);o.start();return o};
+  const src=to=>{const s=ctx.createBufferSource();s.buffer=noise;s.loop=true;s.connect(to);s.start(0,Math.random()*1.5);return s};
+  function init(){if(ctx||!AC)return;try{ctx=new AC()}catch(e){return}
+    M=gain(on?0.7:0,ctx.destination);
+    noise=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    // diesel engine: sawtooth + sub square through a low-pass, plus a rumble band of noise; pulsing gain at firing rate
+    n.eng=gain(0,M);n.engAM=gain(0.7,n.eng);n.engF=filt('lowpass',300,0.9,n.engAM);n.engA=osc('sawtooth',35,n.engF);n.engB=osc('square',17.5,gain(0.5,n.engF));
+    n.engN=filt('bandpass',140,1.2,gain(0.9,n.engF));src(n.engN);
+    n.puls=gain(0.3,null);n.puls.connect(n.engAM.gain);n.engP=osc('sine',35,n.puls);   // firing pulses: ±30% around the engine level
+    // hydraulics: pump whine + oil hiss, relief valve squeal
+    n.hyd=gain(0,M);n.hydF=filt('bandpass',900,5,n.hyd);n.hydO=osc('sawtooth',190,n.hydF);src(filt('bandpass',3200,1.5,gain(0.25,n.hyd)));
+    n.rel=gain(0,M);n.relO=osc('triangle',1350,filt('bandpass',1350,8,n.rel));n.relV=osc('sine',7,gain(18,n.relO.frequency));
+    // bucket in soil: gritty crunch (noise with a fast random tremolo set every frame)
+    n.dig=gain(0,M);n.digT=gain(0,n.dig);src(filt('bandpass',520,0.8,n.digT));src(filt('highpass',2400,0.5,gain(0.35,n.digT)));
+    // sand pouring: hiss
+    n.pour=gain(0,M);src(filt('bandpass',2300,0.6,n.pour));src(filt('lowpass',380,0.7,gain(0.6,n.pour)));
+    // tracks: low clank rattle
+    n.trk=gain(0,M);n.trkT=gain(0,n.trk);src(filt('bandpass',180,2,n.trkT));n.trkL=osc('square',7,gain(0.5,n.trkT.gain));
+    // reverse / travel alarm
+    n.beep=gain(0,M);osc('square',1150,filt('bandpass',1150,3,n.beep));
+    addEventListener('visibilitychange',()=>{if(!ctx)return;if(document.hidden)ctx.suspend();else if(on)ctx.resume()})}
+  const set=(p,v,tc=0.06)=>p.setTargetAtTime(v,ctx.currentTime,tc);
+  function wake(){init();if(ctx&&on&&ctx.state==='suspended')ctx.resume()}
+  addEventListener('pointerdown',wake);addEventListener('keydown',wake);   // browsers only allow audio after a user gesture
+  function toggle(){on=!on;store.set('loaderSnd',on?'1':'0');wake();if(ctx)set(M.gain,on?0.7:0,0.02);btn();toast(on?'เปิดเสียง':'ปิดเสียง',true)}
+  function btn(){const b=$('bSnd');if(b)b.firstChild.textContent=on?'เสียง: เปิด':'เสียง: ปิด'}
+  // one-shots
+  function hit(kind){if(!ctx||!on)return;const t=ctx.currentTime,out=gain(0,M),s=kind==='truck'?1:kind==='ground'?0.8:kind==='cone'?0.35:0.6;
+    out.gain.setValueAtTime(0.9*s,t);out.gain.exponentialRampToValueAtTime(0.001,t+(kind==='truck'?0.9:0.45));
+    const th=osc('sine',kind==='cone'?300:110,out);th.frequency.exponentialRampToValueAtTime(kind==='cone'?120:38,t+0.25);th.stop(t+1);   // thump
+    const nb=ctx.createBufferSource();nb.buffer=noise;nb.connect(filt('lowpass',kind==='ground'?900:2500,0.7,gain(0.8,out)));nb.start(t,Math.random());nb.stop(t+0.25);
+    if(kind==='truck')for(const f of [233,347,521]){const o=osc('square',f,filt('bandpass',f,12,gain(0.18,out)));o.stop(t+1)}}   // steel bed rings
+  function thud(v){if(!ctx||!on)return;const t=ctx.currentTime,out=gain(0,M);out.gain.setValueAtTime(0.25*v,t);out.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    const o=osc('sine',75,out);o.frequency.exponentialRampToValueAtTime(40,t+0.2);o.stop(t+0.35)}
+  function tone(fs,dur,gap,vol){if(!ctx||!on)return;const t0=ctx.currentTime;fs.forEach((f,i)=>{const t=t0+i*gap,g=gain(0,M);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.02);g.gain.exponentialRampToValueAtTime(0.001,t+dur);const o=ctx.createOscillator();o.type='triangle';o.frequency.value=f;o.connect(g);o.start(t);o.stop(t+dur+0.05)})}
+  const ding=()=>tone([988,1319],0.35,0.09,0.18),chime=ok=>ok?tone([523,659,784,1047],0.6,0.13,0.2):tone([392,330,262],0.7,0.2,0.2);
+  // per frame: map machine state to the continuous layers
+  function tick(dt){if(!ctx||ctx.state!=='running'||dt<=0)return;const ex=isEx(),run=state==='run'&&!paused,idle=state!=='menu',inp=run?lastInp:{boom:0,buck:0,arm:0,swing:0,thr:0,travel:0,turn:0};
+    const cur=ex?{a:E.bm,b:E.ar,c:E.bk,s:E.sw}:{a:L.beta,b:L.alpha,c:0,s:0};if(!pv||pv.ex!==ex){pv={...cur,ex}}
+    const mv=(Math.abs(cur.a-pv.a)+Math.abs(cur.b-pv.b)+0.6*Math.abs(cur.c-pv.c))/dt,sw=Math.abs(cur.s-pv.s)/dt;Object.assign(pv,cur);
+    let hyd=0,rel=0,dig=0,trk=0,beep=false,rpm=idle?0.25:0;
+    if(run&&ex){hyd=clamp(mv/(40*DEG),0,1);const sv=clamp(sw/EXR.sw,0,1),want=Math.abs(inp.boom)+Math.abs(inp.arm)+Math.abs(inp.buck);
+      rel=want>0.5&&hyd<0.06&&sv<0.1?1:0;trk=clamp(Math.abs(E.v)/EXR.v+Math.abs(inp.turn)*0.7,0,1);beep=trk>0.15;
+      dig=clamp(cutLast*140,0,1)+clamp(bucketContacts*0.04*hyd,0,0.4);hyd=Math.max(hyd,sv*0.8);rpm=0.3+0.45*hyd+0.25*trk+0.2*Math.min(1,dig)+0.15*rel}
+    else if(run){hyd=clamp(mv/BOOMRATE,0,1);const want=Math.abs(inp.boom)+Math.abs(inp.buck);rel=want>0.5&&hyd<0.06?1:0;
+      dig=clamp(bucketContacts*0.07*(Math.abs(L.v)+hyd*2),0,1);beep=L.v<-0.15;rpm=0.28+0.45*Math.abs(inp.thr)+0.2*Math.abs(L.v)/VF+0.3*hyd+0.2*dig+0.15*rel}
+    rpm=Math.min(1,rpm);const f=32+rpm*62;lv_={rpm,hyd,rel,dig,trk,beep};
+    set(n.engA.frequency,f,0.15);set(n.engB.frequency,f/2,0.15);set(n.engP.frequency,f,0.15);set(n.engF.frequency,220+rpm*1100,0.15);set(n.eng.gain,idle?0.16+0.14*rpm:0,0.2);
+    set(n.hydO.frequency,170+hyd*110);set(n.hyd.gain,0.07*hyd+0.05*rel);set(n.rel.gain,0.045*rel,0.05);
+    set(n.dig.gain,0.5*Math.min(1,dig),0.04);n.digT.gain.setValueAtTime(0.4+Math.random()*0.9,ctx.currentTime);
+    set(n.trk.gain,0.35*trk,0.1);
+    beepT=beep?beepT+dt:0;set(n.beep.gain,beep&&(beepT%1)<0.5?0.05:0,0.01);
+    // falling sand → pour hiss; soil arriving in the truck → thud
+    let fall=0;const vd=-1.2*FDT/SUB;for(let i=0;i<N;i++)if(!inBk[i]&&py[i]-qy[i]<vd)fall++;pourN+=(fall-pourN)*0.3;set(n.pour.gain,0.35*clamp(pourN/18,0,1),0.05);
+    lv_.pour=pourN;thudT-=dt;if(run&&inTruck>truckPrev+1&&thudT<=0){thud(clamp((inTruck-truckPrev)/6,0.3,1));thudT=0.15}truckPrev=inTruck}
+  return {tick,hit,ding,chime,toggle,btn,get on(){return on},get levels(){return lv_}}})();
 function step(dt){
   const run=state==='run';
   const inp=run?readInput():{thr:0,steer:0,boom:0,buck:0,brake:true,arm:0,swing:0,travel:0,turn:0};
-  if(isEx())stepEx(dt,inp);else stepVehicle(dt,inp);
+  lastInp=inp;if(isEx())stepEx(dt,inp);else stepVehicle(dt,inp);
   refreshBodies(false);
   bucketContacts=N?physics():0;
   countSoil();
@@ -1270,7 +1334,7 @@ const whoName=()=>who.trim()||'ไม่ระบุชื่อ';
 const mine=id=>logGet().filter(r=>r.who===whoName()&&(!id||r.lv===id));
 const when=t=>new Date(t).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 
-function finish(ok){if(state!=='run')return;state='done';
+function finish(ok){if(state!=='run')return;state='done';SND.chime(ok);
   const r=lv.result(ok),score=lv.allowNeg?Math.round(r.score):Math.max(0,Math.round(r.score)),   // pond levels may go negative (over-dig penalty)
     gr=lv.grades,grade=score>=gr[0]?'A':score>=gr[1]?'B':score>=gr[2]?'C':'D';
   const prev=mine(lv.id);
@@ -1408,7 +1472,7 @@ function reset(id,run){lv=LEVELS[id];lvId=id;store.set('loaderLv',id);const st=l
   state=run?'run':'menu';paused=false;if(!run){buildMenu();$('menu').hidden=false}
 }
 
-$('bSubmit').onclick=()=>{if(state==='run'&&lv.canSubmit&&lv.canSubmit())finish(true)};$('bCam').onclick=cycleCam;$('bReset').onclick=()=>{if(state==='run'||state==='done')reset(lvId,true)};$('bHelp').onclick=showHelp;$('bMenu').onclick=showMenu;
+$('bSubmit').onclick=()=>{if(state==='run'&&lv.canSubmit&&lv.canSubmit())finish(true)};$('bCam').onclick=cycleCam;$('bSnd').onclick=SND.toggle;SND.btn();$('bReset').onclick=()=>{if(state==='run'||state==='done')reset(lvId,true)};$('bHelp').onclick=showHelp;$('bMenu').onclick=showMenu;
 $('bHelp2').onclick=showHelp;$('bResume').onclick=resume;$('bHelpMenu').onclick=showMenu;
 $('bAgain').onclick=()=>reset(lvId,true);$('bNext').onclick=()=>reset($('bNext').dataset.lv,true);$('bRHist').onclick=()=>openHist(lvId);$('bRMenu').onclick=showMenu;
 $('bHist').onclick=()=>openHist(lvId);$('bReady').onclick=openReady;$('bRdClose').onclick=()=>{$('ready').hidden=true;buildMenu()};$('bRdPrint').onclick=()=>window.print();$('bRdGo').onclick=()=>reset($('bRdGo').dataset.lv,true);$('bHistClose').onclick=closeHist;$('bCsv').onclick=exportCSV;
@@ -1420,7 +1484,7 @@ reset(lvId,false);
 let acc=0,last=performance.now(),blink=0,frameN=0;
 function frame(t){const rdt=(t-last)/1000;last=t;const dt=clamp(rdt,0,0.05);acc+=dt;let n=0;
   if(!paused){while(acc>=FDT&&n<3){step(FDT);acc-=FDT;n++}if(n===3)acc=0}else acc=0;
-  drawSoil();updCam(dt,false);hud(dt);monitor(rdt);
+  drawSoil();updCam(dt,false);hud(dt);monitor(rdt);SND.tick(dt);
   blink+=dt;beacon.material.emissiveIntensity=(Math.sin(blink*9)>0)?1.4:0.1;
   terrSync();frameN++;renderer.shadowMap.needsUpdate=q>=2||(frameN&1)===0;   // low tiers: shadows every other frame
   renderer.render(scene,camera);requestAnimationFrame(frame)}
