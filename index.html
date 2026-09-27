@@ -92,6 +92,8 @@ body{background:#b9cedb;color:var(--ink);font-family:var(--body);-webkit-user-se
 .gbar{height:6px;margin-top:5px;border-radius:2px;background:#2a2c2f;overflow:hidden}
 .gbar i{display:block;height:100%;width:0;background:var(--hazard);transition:width .15s}
 .gbar i.full{background:var(--ok)}
+#prsBar{background:var(--ok);transition:width .08s}#prsBar.hi{background:var(--hazard)}#prsBar.max{background:var(--warn);animation:flick .12s steps(2) infinite}#prs.max{color:var(--warn)}
+@keyframes flick{50%{opacity:.4}}
 .card.wide{width:min(780px,100%)}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
 input.name{font-family:var(--body);font-size:15px;background:#1f2124;color:var(--ink);border:1px solid rgba(255,255,255,.16);border-radius:5px;padding:8px 10px;flex:1;min-width:0;max-width:320px;-webkit-user-select:text;user-select:text}
@@ -170,7 +172,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
   #gauges{bottom:calc(8px + env(safe-area-inset-bottom,0px))}
   .stick{width:112px;height:112px;bottom:calc(76px + env(safe-area-inset-bottom,0px))}
 }
-@media (prefers-reduced-motion:reduce){#barfill,#toast,.gbar i{transition:none}}
+@media (prefers-reduced-motion:reduce){#barfill,#toast,.gbar i{transition:none}#prsBar.max{animation:none}}
 </style>
 
 </head>
@@ -206,6 +208,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
   <div class="g"><div class="lbl">บุ้งกี๋</div><div class="v" id="buck">0°</div></div>
   <div class="g gHideS"><div class="lbl" id="glArt">หักเลี้ยว</div><div class="v" id="art">0°</div></div>
   <div class="g"><div class="lbl">ในบุ้งกี๋</div><div class="v" id="inb">0.0<small>t</small></div><div class="gbar" role="meter" aria-label="น้ำหนักในบุ้งกี๋" aria-valuemin="0" aria-valuemax="100" id="inbMeter"><i id="inbBar"></i></div></div>
+  <div class="g"><div class="lbl">แรงดัน</div><div class="v" id="prs">0<small>bar</small></div><div class="gbar" role="meter" aria-label="แรงดันไฮดรอลิก" aria-valuemin="0" aria-valuemax="350" id="prsMeter"><i id="prsBar"></i></div></div>
 </div>
 
 <div id="toast"></div>
@@ -1297,6 +1300,8 @@ const CRIT={
     {k:'ขุดได้ตามเขตอย่างน้อย 85%',f:r=>num(r.dug)>=85,tip:'จอดให้ถึงเขตขุด ขุดให้ทั่วพื้นสีส้ม'},
     {k:'เตือนเสียสมดุลไม่เกิน 2 ครั้ง',f:r=>num(r.warn,9)<=2,tip:'จอดตีนตะขาบตามแนวลาด ไม่ยื่นบุ้งกี๋ที่มีดินไปทางด้านลาดลง'},
     {k:'ดินลงกรอบอย่างน้อย 60%',f:r=>num(r.zone)>=60,tip:'ขับลงมาใกล้ตีนเนินก่อนเท หรือหมุนป้อมให้ถึงกรอบเหลือง'}]};
+const noRelief={k:'ค้างแรงดันเต็มไม่นาน (ไม่เกิน 8 วินาที หรือ 3% ของเวลา)',f:r=>num(r.relief)<=Math.max(8,0.03*num(r.dur)),tip:'ปล่อยคันโยกเมื่อบูม แขน หรือบุ้งกี๋สุดระยะหรือติดดิน อย่ากดค้างจนเข็มแรงดันขึ้นแดง (วาล์วระบายร้อนและสิ้นเปลืองน้ำมัน)'};
+for(const id in CRIT)CRIT[id].push(noRelief);   // every level: don't sit on the relief valve
 const critEval=(id,r)=>CRIT[id].map(c=>({k:c.k,tip:c.tip,ok:!!c.f(r)}));
 const passRec=(id,r)=>critEval(id,r).every(c=>c.ok);
 function lvStatus(id){const recs=mine(id),last=recs.slice(-PASS_WIN),np=last.filter(r=>passRec(id,r)).length,miss={};
@@ -1361,7 +1366,7 @@ const SND=(()=>{let ctx=null,lv_={},on=store.get('loaderSnd','1')==='1',M,noise,
       dig=clamp(cutLast*140,0,1)+clamp(bucketContacts*0.04*hyd,0,0.4);hyd=Math.max(hyd,sv*0.8);rpm=0.3+0.45*hyd+0.25*trk+0.2*Math.min(1,dig)+0.15*rel}
     else if(run){hyd=clamp(mv/BOOMRATE,0,1);const want=Math.abs(inp.boom)+Math.abs(inp.buck);rel=want>0.5&&hyd<0.06?1:0;
       dig=clamp(bucketContacts*0.07*(Math.abs(L.v)+hyd*2),0,1);beep=L.v<-0.15;rpm=0.28+0.45*Math.abs(inp.thr)+0.2*Math.abs(L.v)/VF+0.3*hyd+0.2*dig+0.15*rel}
-    rpm=Math.min(1,rpm);const f=32+rpm*62;lv_={rpm,hyd,rel,dig,trk,beep};
+    rel=PRESS>330?1:0;rpm=Math.min(1,rpm);const f=32+rpm*62;lv_={rpm,hyd,rel,dig,trk,beep};
     set(n.engA.frequency,f,0.15);set(n.engB.frequency,f/2,0.15);set(n.engP.frequency,f,0.15);set(n.engF.frequency,220+rpm*1100,0.15);set(n.eng.gain,idle?0.16+0.14*rpm:0,0.2);
     set(n.hydO.frequency,170+hyd*110);set(n.hyd.gain,0.07*hyd+0.05*rel);set(n.rel.gain,0.045*rel,0.05);
     set(n.dig.gain,0.5*Math.min(1,dig),0.04);n.digT.gain.setValueAtTime(0.4+Math.random()*0.9,ctx.currentTime);
@@ -1372,10 +1377,21 @@ const SND=(()=>{let ctx=null,lv_={},on=store.get('loaderSnd','1')==='1',M,noise,
     let fall=0;const vd=-1.2*FDT/SUB;for(let i=0;i<N;i++)if(!inBk[i]&&py[i]-qy[i]<vd)fall++;pourN+=(fall-pourN)*0.3;set(n.pour.gain,0.35*clamp(pourN/18,0,1),0.05);
     lv_.pour=pourN;thudT-=dt;if(run&&inTruck>truckPrev+1&&thudT<=0){thud(clamp((inTruck-truckPrev)/6,0.3,1));thudT=0.15}truckPrev=inTruck}
   return {tick,hit,ding,chime,toggle,btn,get on(){return on},get levels(){return lv_}}})();
+// hydraulic pressure (bar): standby ~25, rises with lever demand, lifted load and digging; a lever held while its joint cannot move goes over relief (350)
+let PRESS=25,reliefT=0,reliefRun=0,reliefWarned=false;
+function hydPress(dt,inp,j0){const ex=isEx(),run=state==='run'&&!paused;let tgt=25;
+  if(run&&!(ex&&TIP.fall)){const j=ex?[E.bm,E.ar,E.bk,E.sw]:[L.beta,L.alpha,0,0],rt=ex?[EXR.bm,EXR.ar,EXR.bk,EXR.sw]:[BOOMRATE,BUCKRATE,1,1],lvr=ex?[inp.boom,inp.arm,inp.buck,inp.swing]:[inp.boom,inp.buck,0,0];
+    let want=0,stall=false;for(let k=0;k<4;k++){const w=Math.abs(lvr[k]);want+=w;if(w>0.5&&Math.abs(j[k]-j0[k])<0.08*rt[k]*dt)stall=true}   // joint barely moves (<8% of its speed): at its limit or blocked
+    const load=(inBucket+pendingN())*TPP;
+    tgt=25+(want>0.05?70+60*Math.min(1,want):0)+Math.max(0,lvr[0])*load*(ex?40:25)+
+      (ex?Math.min(130,cutLast*140*120+bucketContacts*6):Math.min(150,bucketContacts*4*(Math.abs(L.v)+Math.abs(inp.boom))));
+    if(stall)tgt=350+Math.random()*12;tgt=Math.min(362,tgt)}
+  PRESS+=(tgt-PRESS)*Math.min(1,dt*12);
+  if(run&&PRESS>330){reliefT+=dt;reliefRun+=dt;if(reliefRun>2&&!reliefWarned){reliefWarned=true;toast('ปล่อยคันโยก! แรงดันเต็ม วาล์วระบายทำงาน')}}else{reliefRun=0;reliefWarned=false}}
 function step(dt){
   const run=state==='run';
   const inp=run?readInput():{thr:0,steer:0,boom:0,buck:0,brake:true,arm:0,swing:0,travel:0,turn:0};
-  lastInp=inp;if(isEx())stepEx(dt,inp);else stepVehicle(dt,inp);
+  lastInp=inp;const j0=isEx()?[E.bm,E.ar,E.bk,E.sw]:[L.beta,L.alpha,0,0];if(isEx())stepEx(dt,inp);else stepVehicle(dt,inp);hydPress(dt,inp,j0);
   refreshBodies(false);
   bucketContacts=N?physics():0;
   countSoil();
@@ -1417,7 +1433,9 @@ function hud(dt){hudT-=dt;if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').classN
   else{$('boom').textContent=Math.round(L.beta/DEG)+'°';$('buck').textContent=(L.alpha>0?'+':'')+Math.round(L.alpha/DEG)+'°';
     $('art').textContent=(L.phi>0?'ซ ':L.phi<0?'ข ':'')+Math.abs(Math.round(L.phi/DEG))+'°'}
   const b=(inBucket+pendingN())*TPP,f=b/(ex?BCAP_EX:BCAP),bar=$('inbBar');$('inb').innerHTML=b.toFixed(1)+'<small>t</small>';
-  bar.style.width=Math.min(100,f*100)+'%';bar.className=f>=0.85?'full':'';$('inbMeter').setAttribute('aria-valuenow',String(Math.round(f*100)))}
+  bar.style.width=Math.min(100,f*100)+'%';bar.className=f>=0.85?'full':'';$('inbMeter').setAttribute('aria-valuenow',String(Math.round(f*100)));
+  const pr=Math.min(350,PRESS),pc=pr>320?'max':pr>220?'hi':'';$('prs').innerHTML=Math.round(pr)+'<small>bar</small>';$('prs').className='v'+(pc==='max'?' max':'');
+  const pb=$('prsBar');pb.style.width=pr/3.5+'%';pb.className=pc;$('prsMeter').setAttribute('aria-valuenow',String(Math.round(pr)))}
 
 /* ---------- training log (localStorage) ---------- */
 const LOGKEY='loaderLog.v1';
@@ -1432,14 +1450,14 @@ function finish(ok){if(state!=='run')return;state='done';SND.chime(ok);
   const r=lv.result(ok),score=lv.allowNeg?Math.round(r.score):Math.max(0,Math.round(r.score)),   // pond levels may go negative (over-dig penalty)
     gr=lv.grades,grade=score>=gr[0]?'A':score>=gr[1]?'B':score>=gr[2]?'C':'D';
   const prev=mine(lv.id);
-  const rec={t:Date.now(),who:whoName(),lv:lv.id,score,grade,ok:ok?1:0,dur:+elapsed.toFixed(1),hits,spill:+(spillN*TPP).toFixed(1)};
+  const rec={t:Date.now(),who:whoName(),lv:lv.id,score,grade,ok:ok?1:0,dur:+elapsed.toFixed(1),hits,spill:+(spillN*TPP).toFixed(1),relief:+reliefT.toFixed(1)};
   for(const k in r.m){const v=r.m[k];rec[k]=typeof v==='number'?+v.toFixed(2):v===undefined?'':v}
   const log=logGet();log.push(rec);logSet(log);
   const best=Math.max(score,...prev.map(x=>x.score)),last=prev.length?prev[prev.length-1].score:null;
   $('rTag').textContent=`ผลการฝึก · ${lv.n} ${lv.name} · ครั้งที่ ${prev.length+1}`;
   $('rGrade').textContent=grade;$('rTitle').textContent=r.title;
   $('rScore').textContent='คะแนน '+score+(last!==null?` (${score>=last?'+':'−'}${Math.abs(score-last)} จากครั้งก่อน)`:'');
-  const rows=[...r.rows,['คะแนนดีที่สุด',best+(prev.length&&score>=best&&score>Math.max(...prev.map(x=>x.score))?' · สถิติใหม่!':'')]];
+  const rows=[...r.rows,['ค้างแรงดันเต็ม (วาล์วระบาย)',reliefT.toFixed(1)+' s'],['คะแนนดีที่สุด',best+(prev.length&&score>=best&&score>Math.max(...prev.map(x=>x.score))?' · สถิติใหม่!':'')]];
   $('rRows').replaceChildren(...rows.flatMap(([k,v])=>{const a=document.createElement('span'),b=document.createElement('span');a.textContent=k;b.className='num';b.textContent=v;return[a,b]}));
   const cr=critEval(lv.id,rec),st=lvStatus(lv.id),miss=cr.filter(c=>!c.ok);
   const lis=cr.map(c=>{const li=document.createElement('li');li.textContent=c.k;if(c.ok)li.className='ok';return li});
@@ -1453,7 +1471,7 @@ function finish(ok){if(state!=='run')return;state='done';SND.chime(ok);
 /* CSV export: every trainee on this device; BOM so Excel reads Thai correctly */
 const CSVCOLS=[['cone','ชนกรวย'],['miss','พลาดประตู'],['w1','ตักครั้งที่ 1 (t)'],['w2','ตักครั้งที่ 2 (t)'],['w3','ตักครั้งที่ 3 (t)'],['fill','เติมบุ้งกี๋เฉลี่ย (%)'],
   ['gap','ระยะห่างกระบะเฉลี่ย (m)'],['off','เยื้องกลางกระบะเฉลี่ย (m)'],['ang','มุมเข้าเฉลี่ย (องศา)'],['del','ลงกระบะเฉลี่ย (%)'],['load','ดินบนรถ (t)'],
-  ['tgt','แตะเป้า (จุด)'],['gnd','บุ้งกี๋กระแทกพื้น (ครั้ง)'],['dug','ขุดร่องออก (%)'],['depth','ความลึกร่องเฉลี่ย (m)'],['drange','ความลึกต่างกัน (m)'],['zone','ดินลงกองที่กำหนด (%)'],['slope','ขอบลาดตรงแบบ (%)'],['rim','ปากบ่อสะอาด (%)'],['bottom','ดินหล่นในบ่อ (t)'],['flat','ก้นบ่อได้ระดับ (%)'],['over','ขุดเกินแบบ (m³)'],['minst','เสถียรภาพต่ำสุด (%)'],['warn','เตือนเสียสมดุล (ครั้ง)'],['tip','รถพลิกคว่ำ']];
+  ['tgt','แตะเป้า (จุด)'],['gnd','บุ้งกี๋กระแทกพื้น (ครั้ง)'],['dug','ขุดร่องออก (%)'],['depth','ความลึกร่องเฉลี่ย (m)'],['drange','ความลึกต่างกัน (m)'],['zone','ดินลงกองที่กำหนด (%)'],['slope','ขอบลาดตรงแบบ (%)'],['rim','ปากบ่อสะอาด (%)'],['bottom','ดินหล่นในบ่อ (t)'],['flat','ก้นบ่อได้ระดับ (%)'],['over','ขุดเกินแบบ (m³)'],['minst','เสถียรภาพต่ำสุด (%)'],['warn','เตือนเสียสมดุล (ครั้ง)'],['tip','รถพลิกคว่ำ'],['relief','ค้างแรงดันเต็ม (วินาที)']];
 function toCSV(log){const p2=n=>String(n).padStart(2,'0');
   const esc=v=>{if(v==null)return'';if(typeof v==='string'&&/^[=+\-@\t\r]/.test(v))v="'"+v;v=String(v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   const head=['วันที่','เวลา','ผู้ฝึก','ด่าน','คะแนน','เกรด','ผ่านเกณฑ์','สำเร็จ','เวลาที่ใช้ (วินาที)','ชนรถ','ดินหก (t)',...CSVCOLS.map(c=>c[1])];
@@ -1560,7 +1578,7 @@ function reset(id,run){lv=LEVELS[id];lvId=id;store.set('loaderLv',id);const st=l
   setScene(ex,!!lv.truck,lv.pit||null);decoG.visible=!ex;slalomG.visible=id==='slalom';padG.visible=!!lv.pad;patch.visible=!!lv.pile;tgtG.visible=id==='ex_ctrl';
   refreshBodies(true);
   if(lv.pile){buildPile(QUAL[q].n);settle(160)}else if(lv.pit==='dig'){LSO.fill(0);lv.terrInit();terrDirty=true;N=0;if(lv.trim)addLumps();soil.count=N;cutAcc=0;spawnK=0;spawnCnt=0;settle(60)}else if(lv.pit){fillPit();settle(120)}else{N=0;soil.count=0}
-  elapsed=0;hits=0;spillN=0;gndHits=0;exStrike=false;exLowPrev=9;wasHit=false;camYaw=0;bucketContacts=0;lv.setup();
+  elapsed=0;hits=0;spillN=0;gndHits=0;PRESS=25;reliefT=0;reliefRun=0;reliefWarned=false;exStrike=false;exLowPrev=9;wasHit=false;camYaw=0;bucketContacts=0;lv.setup();
   countSoil();drawSoil();updCam(0,true);setupHud();
   for(const o of ['result','menu','help','hist','ready'])$(o).hidden=true;
   state=run?'run':'menu';paused=false;if(!run){buildMenu();$('menu').hidden=false}

@@ -22,6 +22,7 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
   - Level 3 dump: a dump cycle is loaded → tipping near the truck (snapshot gap to bed / offset along bed / approach angle via `dumpGeom()`) → settled; delivered = truck-count delta.
 - `countSoil()` no longer counts grains still inside the bucket as "in truck".
 - Gauges: bucket height (lowest bucket point, green above truck rim `RIM`), bucket-load bar vs `BCAP`.
+- Hydraulic pressure gauge (`PRESS`, bar, `hydPress()` every step): standby 25, lever demand +70..130, lifted load (boom up × load), digging/pile resistance; a lever held > 0.5 while its joint moves < 8% of its rate (limit or blocked) goes to relief 350+. Bar green → amber > 220 → red flashing > 320; toast after 2 s at relief. Time at relief (`reliefT`) is logged per attempt (`relief`, result row, CSV) and every level's `CRIT` gets `noRelief` (≤ max(8 s, 3% of the attempt)). The relief-valve sound follows the gauge.
 - Log: `localStorage['loaderLog.v1']` (array of attempts, per trainee name `loaderWho`), history overlay with SVG progress chart, CSV export (UTF-8 BOM).
 - Performance: quality tiers `QUAL` (pixel ratio, shadow map size, grain count, grain mesh detail); `monitor()` drops a tier when FPS < 40 (trims untouched pile grains mid-run) and climbs back when > 57, never above a tier that stuttered. Low tiers update shadows every other frame; wheel lugs are instanced.
 
@@ -48,7 +49,6 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 
 ## Roadmap
 ### Phase 2 leftovers
-- Hydraulic pressure feel on the dashboard.
 - Tune excavator criteria/targets with real trainees (thresholds were set from scripted runs, not people). Scripted bots reached ~60% on `ex_pit` and ~20 cm accuracy on `ex_trim` banks (only with the bucket bottom kept parallel to the slope), so both need a human check.
 ### Phase 3
 - ESP32-S3 firmware in `firmware/` acting as a USB HID gamepad (2 joysticks + buttons, hall-effect sensors). Map axes to the same Gamepad API layout the sim already reads.
