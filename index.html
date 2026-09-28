@@ -92,7 +92,7 @@ body{background:#b9cedb;color:var(--ink);font-family:var(--body);-webkit-user-se
 .gbar{height:6px;margin-top:5px;border-radius:2px;background:#2a2c2f;overflow:hidden}
 .gbar i{display:block;height:100%;width:0;background:var(--hazard);transition:width .15s}
 .gbar i.full{background:var(--ok)}
-#sbBar{top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:5px;padding:6px;max-width:min(560px,calc(100vw - 24px))}
+#sbBar{top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:5px;padding:6px;max-width:min(780px,calc(100vw - 700px))}
 #sbBar .btn.on{border-color:var(--hazard);color:var(--hazard)}#sbBar .sep{width:1px;background:rgba(255,255,255,.15);margin:0 3px}
 @media (max-width:640px){#sbBar{top:calc(244px + env(safe-area-inset-top,0px));left:12px;right:12px;transform:none;max-width:none;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:4px}#sbBar kbd{display:none}#sbBar .btn{padding:5px 9px;font-size:12px;white-space:nowrap;flex:none}}
 #prsBar{background:var(--ok);transition:width .08s}#prsBar.hi{background:var(--hazard)}#prsBar.max{background:var(--warn);animation:flick .12s steps(2) infinite}#prs.max{color:var(--warn)}
@@ -115,6 +115,9 @@ input.name:focus-visible{outline:2px solid var(--hazard);outline-offset:1px}
 .tabs button{font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.04em;color:var(--mute);background:#1f2124;border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:6px 10px;cursor:pointer}
 .tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--hazard)}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 10px}
+#sbMap .kpis{margin:10px 0 8px}#sbMap .kpis div{padding:6px 9px}#sbMap .kpis .v{font-size:16px}#sbMap h1{margin-bottom:6px}
+#mapCv{display:block;width:100%;max-width:min(569px,calc(100vh - 360px));min-width:240px;margin:0 auto;aspect-ratio:1;border-radius:6px;image-rendering:auto;background:#d6c6a6}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mute);margin:8px 0 4px}.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .kpis div{background:#1f2124;border-radius:5px;padding:8px 10px}
 .kpis .v{font-family:var(--mono);font-size:20px;margin-top:2px}
 .kpis .v small{font-size:11px;color:var(--mute);margin-left:3px}
@@ -206,7 +209,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
 
 <div class="hud" id="sbBar" hidden>
   <button class="btn" data-v="ex" type="button">รถขุด<kbd>1</kbd></button><button class="btn" data-v="ld" type="button">รถตัก<kbd>2</kbd></button><button class="btn" data-v="tr" type="button">รถบรรทุก<kbd>3</kbd></button><button class="btn" data-v="dz" type="button">รถไถ<kbd>4</kbd></button>
-  <span class="sep"></span><button class="btn" id="bTree" type="button">ปลูกต้นไม้<kbd>T</kbd></button><button class="btn" id="bWater" type="button">เปิดน้ำ<kbd>O</kbd></button><button class="btn" id="bDrain" type="button" hidden>สูบน้ำออก<kbd>P</kbd></button><button class="btn" id="bRight" type="button">ตั้งรถใหม่<kbd>R</kbd></button>
+  <span class="sep"></span><button class="btn" id="bTree" type="button">ปลูกต้นไม้<kbd>T</kbd></button><button class="btn" id="bWater" type="button">เปิดน้ำ<kbd>O</kbd></button><button class="btn" id="bDrain" type="button" hidden>สูบน้ำออก<kbd>P</kbd></button><button class="btn" id="bCut" type="button">เอาต้นไม้ออก<kbd>X</kbd></button><button class="btn" id="bRight" type="button">ตั้งรถใหม่<kbd>R</kbd></button><button class="btn" id="bMap" type="button">ภาพรวม<kbd>G</kbd></button>
 </div>
 <div class="hud" id="gauges">
   <div class="g"><div class="lbl">ความเร็ว</div><div class="v"><span id="gear">N</span><span id="spd">0</span><small>km/h</small></div></div>
@@ -312,6 +315,16 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
   </div>
 </div>
 
+<div class="overlay" id="sbMap" hidden>
+  <div class="card wide">
+    <div class="lbl">โหมดอิสระ · ไซต์งาน 50 ไร่ (283 × 283 m)</div>
+    <h1>ภาพรวมโครงการ</h1>
+    <div class="row"><button class="go sm" id="bMapClose" type="button">กลับไปทำงาน</button><button class="go sec" id="bDrone" type="button">ดูมุมโดรน 3 มิติ</button><button class="go sec" id="bTreesAll" type="button">เอาต้นไม้ออกทั้งหมด</button></div>
+    <div class="kpis" id="mKpi"></div>
+    <canvas id="mapCv" width="569" height="569" role="img" aria-label="แผนที่ไซต์งานมุมบน: สีฟ้าคือที่ขุด เข้มตามความลึก สีน้ำตาลคือที่ถม"></canvas>
+    <div class="legend"><span><i style="background:#b0d0ec"></i>ขุดตื้น</span><span><i style="background:#123480"></i>ขุดลึก (เส้นทุก 2 m)</span><span><i style="background:#ecc480"></i>ถมเล็กน้อย</span><span><i style="background:#924e1e"></i>ถมสูง</span><span><i style="background:#3cc8d7"></i>น้ำ</span><span><i style="background:#2f7a2c;border-radius:50%"></i>ต้นไม้</span><span><i style="background:#d6c6a6"></i>ยังไม่ได้ทำ</span></div>
+  </div>
+</div>
 <div class="overlay" id="hist" hidden>
   <div class="card wide">
     <div class="lbl">ประวัติการฝึก · <span id="hWho"></span></div>
@@ -828,9 +841,9 @@ addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
   if(sbOn&&e.code==='Tab'){e.preventDefault();if(!K.Tab)sbSwitch(VORDER[(VORDER.indexOf(SBV)+1)%4])}
   if(!K[e.code]){if(e.code==='KeyC')cycleCam();if(e.code==='KeyV')SND.toggle();
-    if(sbOn){const d={Digit1:'ex',Digit2:'ld',Digit3:'tr',Digit4:'dz'}[e.code];if(d)sbSwitch(d);if(e.code==='KeyT'){SBTOOL=SBTOOL==='tree'?null:'tree';if(SBTOOL)toast('คลิก/แตะบนพื้นเพื่อปลูกต้นไม้',true);sbBar()}if(e.code==='KeyO')watToggle();if(e.code==='KeyP')watDrain()}
+    if(sbOn){const d={Digit1:'ex',Digit2:'ld',Digit3:'tr',Digit4:'dz'}[e.code];if(d)sbSwitch(d);if(e.code==='KeyT')sbTool('tree','คลิก/แตะบนพื้นเพื่อปลูกต้นไม้');if(e.code==='KeyX')sbTool('cut','คลิก/แตะที่ต้นไม้เพื่อเอาออก');if(e.code==='KeyG'){if($('sbMap').hidden)sbOverview();else sbOverviewClose()}if(e.code==='KeyO')watToggle();if(e.code==='KeyP')watDrain()}
     if(e.code==='KeyR'&&sbOn&&state==='run')sbRight();else if(e.code==='KeyR'&&(state==='run'||state==='done'))reset(lvId,true);if(e.code==='KeyH')showHelp();
-    if(e.code==='KeyM')showMenu();if(e.code==='Enter'&&state==='run'&&!paused&&lv.canSubmit&&lv.canSubmit())finish(true);if(e.code==='Escape'){if(!$('help').hidden)resume();else if(!$('hist').hidden)closeHist();else if(!$('ready').hidden)$('ready').hidden=true}}
+    if(e.code==='KeyM')showMenu();if(e.code==='Enter'&&state==='run'&&!paused&&lv.canSubmit&&lv.canSubmit())finish(true);if(e.code==='Escape'){if(!$('sbMap').hidden)sbOverviewClose();else if(!$('help').hidden)resume();else if(!$('hist').hidden)closeHist();else if(!$('ready').hidden)$('ready').hidden=true}}
   K[e.code]=true});
 addEventListener('keyup',e=>{K[e.code]=false});
 addEventListener('blur',()=>{for(const k in K)K[k]=false});
@@ -1357,7 +1370,7 @@ let lvId=store.get('loaderLv','slalom');if(!LEVELS[lvId])lvId='slalom';let lv=LE
 /* ================= โหมดอิสระ (sandbox): a 50-rai site (≈283 × 283 m), dig anywhere down to 20 m, four machines ================= */
 const SB={id:'sb',kind:'terrain',x0:-142,x1:142,z0:-142,z1:142,cs:0.5,maxd:20,d:20};
 SB.nx=Math.round((SB.x1-SB.x0)/SB.cs)+1;SB.nz=Math.round((SB.z1-SB.z0)/SB.cs)+1;
-SB.TH=new Float32Array(SB.nx*SB.nz);SB.LSO=new Float32Array(SB.nx*SB.nz);PITS.sb=SB;
+SB.TH=new Float32Array(SB.nx*SB.nz);SB.LSO=new Float32Array(SB.nx*SB.nz);SB.H0=new Float32Array(SB.nx*SB.nz);PITS.sb=SB;   // H0: ground at the start, for cut/fill
 function useTerrain(T){if(T===SB){DIG=SB;TH=SB.TH;LSO=SB.LSO}else{DIG=DIGS;TH=THS;LSO=LSOS}}
 const VNAME={ex:'รถขุด',ld:'รถตัก',tr:'รถบรรทุก',dz:'รถไถ'},VORDER=['ex','ld','tr','dz'];
 let SBTOOL=null,sbMinH=0,sbMinT=0;
@@ -1370,7 +1383,7 @@ function sbGen(){const {nx,nz,x0,z0,cs,TH:T,LSO:Lo}=SB;
     T[k*nx+i]=h*edge;Lo[k*nx+i]=0}
   for(const [cx,cz,rad,ht] of [[-24,-4,7,2.6],[16,-26,5,1.8]]){const r0=Math.ceil(rad/cs);const ci=Math.round((cx-x0)/cs),ck=Math.round((cz-z0)/cs);
     for(let k=-r0;k<=r0;k++)for(let i=-r0;i<=r0;i++){const d=Math.hypot(i,k)*cs;if(d<rad)Lo[(ck+k)*nx+ci+i]+=ht*(1-d/rad)}}
-  sbMinH=0}
+  for(let n=0;n<T.length;n++)SB.H0[n]=T[n]+Lo[n];sbMinH=0}
 // terrain drawn as 64-cell chunks (32 m); only chunks that changed are rebuilt, far chunks use a coarse index
 const SBC=64,sbChunks=[],SBCX=Math.ceil((SB.nx-1)/SBC),SBCZ=Math.ceil((SB.nz-1)/SBC);
 function sbBuild(){if(sbChunks.length)return;const mat=new THREE.MeshStandardMaterial({map:groundTex,roughness:1,vertexColors:true});
@@ -1537,6 +1550,7 @@ function sbRight(){if(SBV==='ex'){Object.assign(TIP,{a:0,w:0,edge:null,fall:fals
 function sbStep(dt){if(WAT.on){WAT.V+=WQ*dt;WAT.dirty=true}if(WAT.drain){WAT.V=Math.max(0,WAT.V-WD*dt);WAT.dirty=true;if(WAT.V===0){WAT.drain=false;sbBar()}}
   sbTrees(dt);if((sbMinT-=dt)<0){sbMinT=1;let m=0;const T0=SB.TH,Lo=SB.LSO;for(let n=0;n<T0.length;n++){const h=T0[n]+Lo[n];if(h<m)m=h}sbMinH=m}}
 function sbFrame(dt){const p=vPose();sun.position.set(p.x+22,p.y+34,p.z+14);sun.target.position.set(p.x,p.y,p.z);sun.target.updateMatrixWorld();
+  scene.fog.far=camMode===3?900:q>=2?330:220;scene.fog.near=camMode===3?400:q>=2?90:60;
   WAT.t+=dt;if(WAT.dirty&&WAT.t>0.25){WAT.t=0;WAT.dirty=false;watSolve();watBuild()}
   const st=pipeG.getObjectByName('stream');st.visible=WAT.on;if(WAT.on){const top=pipeG.position.y+1.6,bot=Math.max(WAT.n?WAT.w:-99,hAt(pipeG.position.x+0.95,pipeG.position.z));const L2=Math.max(0.2,top+0.5-bot);st.scale.y=L2;st.position.y=1.6-L2/2+0.5}
   for(const c of sbChunks){const cx=c.m.geometry.boundingSphere.center,d=Math.hypot(cx.x-camera.position.x,cx.z-camera.position.z),lod=d>(q>=2?95:55)?1:0;if(lod!==c.lod){c.lod=lod;c.m.geometry.setIndex(lod?c.coarse:c.full)}}}
@@ -1549,15 +1563,47 @@ function sbEnter(){sbBuild();sbGen();for(const c of sbChunks)c.dirty=true;sbSync
   Object.assign(E,{x:0,z:0,hd:Math.PI/2,sw:0,bm:35*DEG,ar:-100*DEG,bk:-60*DEG,v:0});exApplyT();
   Object.assign(L,{x:-14,z:8,thr:Math.PI/2,phi:0,v:0,beta:-14*DEG,alpha:0});applyT();updCyl();
   Object.assign(T,{x:9,z:4,hd:Math.PI/2,v:0,st:0,bed:0});truckPose();Object.assign(D,{x:-8,z:-15,hd:Math.PI/2,v:0,blade:0.3,cut:0});dozerPose();vbInv();sbBar()}
-function sbLeave(){for(const o of arenaHidden)o.visible=true;arenaHidden=[];sbG.visible=false;dozerG.visible=false;BOUND=35;scene.fog.near=70;scene.fog.far=160;camera.far=400;camera.updateProjectionMatrix();
+function sbLeave(){if(camMode===3)camMode=0;$('sbMap').hidden=true;for(const o of arenaHidden)o.visible=true;arenaHidden=[];sbG.visible=false;dozerG.visible=false;BOUND=35;scene.fog.near=70;scene.fog.far=160;camera.far=400;camera.updateProjectionMatrix();
   sun.position.set(22,34,14);sun.target.position.set(0,0,0);sun.target.updateMatrixWorld();T.bed=0;SBTOOL=null;$('sbBar').hidden=true}
 function sbBar(){const b=$('sbBar');b.hidden=!sbOn;if(!sbOn)return;for(const e of b.querySelectorAll('[data-v]'))e.classList.toggle('on',e.dataset.v===SBV);
-  $('bTree').classList.toggle('on',SBTOOL==='tree');$('bWater').classList.toggle('on',WAT.on||SBTOOL==='water');$('bWater').firstChild.textContent=WAT.on?'ปิดน้ำ':'เปิดน้ำ';
+  $('bTree').classList.toggle('on',SBTOOL==='tree');$('bCut').classList.toggle('on',SBTOOL==='cut');$('bWater').classList.toggle('on',WAT.on||SBTOOL==='water');$('bWater').firstChild.textContent=WAT.on?'ปิดน้ำ':'เปิดน้ำ';
   $('bDrain').hidden=!(WAT.V>0||WAT.drain);$('bDrain').firstChild.textContent=WAT.drain?'หยุดสูบ':'สูบน้ำออก';cv.style.cursor=SBTOOL?'crosshair':''}
 const _ray=new THREE.Raycaster(),_ndc=new THREE.Vector2();
 function sbPick(e){const r=cv.getBoundingClientRect();_ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);_ray.setFromCamera(_ndc,camera);
+  if(SBTOOL==='cut'){const h=_ray.intersectObjects([treeG,...sbChunks.map(c=>c.m)],true)[0];if(!h)return;let t=null;
+    if(h.object.parent&&h.object.parent.parent===treeG)t=trees.find(r=>r.g===h.object.parent);
+    else{let bd=3.5;for(const r of trees){const d=Math.hypot(r.x-h.point.x,r.z-h.point.z);if(d<bd){bd=d;t=r}}}
+    if(t)removeTree(t);else toast('ไม่มีต้นไม้ตรงนี้',true);return}
   const hit=_ray.intersectObjects(sbChunks.map(c=>c.m),false)[0];if(!hit)return;const {x,z}=hit.point;
   if(SBTOOL==='tree')plantTree(x,z);else if(SBTOOL==='water'){SBTOOL=null;watStart(x,z)}}
+function removeTree(t){treeG.remove(t.g);trees.splice(trees.indexOf(t),1);toast('เอาต้นไม้ออกแล้ว · เหลือ '+trees.length+' ต้น',true)}
+function sbTool(t,msg){SBTOOL=SBTOOL===t?null:t;if(SBTOOL)toast(msg,true);sbBar()}
+/* ---- project overview: plan map of cut (blue, by depth) and fill (brown) against the starting ground, water, trees, machines, and totals ---- */
+function sbOverview(){if(!sbOn||state!=='run')return;paused=true;$('sbMap').hidden=false;SBTOOL=null;sbBar();
+  const nx=SB.nx,nz=SB.nz,a=SB.cs*SB.cs,T0=SB.TH,Lo=SB.LSO,H0=SB.H0,cv2=$('mapCv'),g=cv2.getContext('2d'),img=g.createImageData(nx,nz),D=img.data;
+  let cut=0,fill=0,area=0,deep=0,wetA=0;const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+  for(let k=0;k<nz;k++)for(let i=0;i<nx;i++){const n=k*nx+i,h=T0[n]+Lo[n],d=h-H0[n];
+    if(d<0)cut-=d*a;else fill+=d*a;if(Math.abs(d)>0.1)area+=a;if(h<deep)deep=h;
+    const sl=(sbH(i-1,k)-sbH(i+1,k)+sbH(i,k-1)-sbH(i,k+1))*1.2;   // hill shade (light from the north-west)
+    let c=mix([214,198,166],[232,220,194],clamp(H0[n]/6,0,1));
+    if(d<-0.1)c=mix([176,208,236],[18,52,128],Math.pow(clamp(-d/20,0,1),0.6));else if(d>0.1)c=mix([236,196,128],[146,78,30],clamp(d/5,0,1));
+    if(WAT.n&&watFlag[n]===1&&h<WAT.w-0.03){c=mix(c,[60,200,215],0.88);wetA+=a}
+    if(d<-0.1){const b=Math.floor(d/2);if(Math.floor((sbH(i+1,k)-H0[Math.min(n+1,H0.length-1)])/2)!==b||Math.floor((sbH(i,k+1)-H0[Math.min(n+nx,H0.length-1)])/2)!==b)c=mix(c,[10,30,80],0.45)}   // 2 m depth contours
+    const f=clamp(1+sl*0.18,0.7,1.25),o=n*4;D[o]=c[0]*f;D[o+1]=c[1]*f;D[o+2]=c[2]*f;D[o+3]=255}
+  g.putImageData(img,0,0);const px=x=>(x-SB.x0)/SB.cs,pz=z=>(z-SB.z0)/SB.cs,ppm=1/SB.cs;
+  g.strokeStyle='rgba(0,0,0,.14)';g.lineWidth=1;g.font='11px sans-serif';g.fillStyle='rgba(0,0,0,.45)';
+  for(let v=-100;v<=100;v+=50){g.beginPath();g.moveTo(px(v),0);g.lineTo(px(v),nz);g.moveTo(0,pz(v));g.lineTo(nx,pz(v));g.stroke();g.fillText(v+' m',px(v)+3,12);g.fillText(v+' m',3,pz(v)-3)}
+  for(const t of trees){g.fillStyle=t.fall?'#7a5a32':'#2f7a2c';g.beginPath();g.arc(px(t.x),pz(t.z),t.fall?2:3.2,0,6.3);g.fill()}
+  if(WAT.inlet>=0){g.fillStyle='#1d4f8a';g.fillRect(px(pipeG.position.x+0.95)-3,pz(pipeG.position.z)-3,6,6)}
+  const veh=[['ex',E.x,E.z,E.hd,4.4,3.0,'#e7a21a'],['ld',L.x,L.z,L.thr,7.5,2.6,'#f0b429'],['tr',T.x,T.z,T.hd,7.8,2.8,'#3c6e8f'],['dz',D.x,D.z,D.hd,5.4,3.9,'#c98a12']];
+  for(const [v,x,z,hd,l,w,col] of veh){g.save();g.translate(px(x),pz(z));g.rotate(-hd);g.fillStyle=col;g.strokeStyle=v===SBV?'#fff':'#222';g.lineWidth=v===SBV?2.5:1;
+    g.fillRect(-l*ppm/2,-w*ppm/2,l*ppm,w*ppm);g.strokeRect(-l*ppm/2,-w*ppm/2,l*ppm,w*ppm);g.fillStyle='#222';g.beginPath();g.moveTo(l*ppm/2+5,0);g.lineTo(l*ppm/2-1,-4);g.lineTo(l*ppm/2-1,4);g.fill();g.restore();
+    g.font='bold 12px sans-serif';g.fillStyle='#111';g.fillText(VNAME[v],px(x)+10,pz(z)-10)}
+  g.fillStyle='#111';g.fillRect(nx-80,nz-18,50*ppm/2.5*1,4);g.font='11px sans-serif';g.fillText('20 m',nx-80,nz-22);g.font='bold 14px sans-serif';g.fillText('N ↑',nx-34,20);
+  const standing=trees.filter(t=>!t.fall).length,rai=area/1600,kp=[['ดินที่ขุดออก',Math.round(cut).toLocaleString(),'m³'],['ดินที่ถม/กอง',Math.round(fill).toLocaleString(),'m³'],['พื้นที่ที่ทำแล้ว',rai.toFixed(2),'ไร่ ('+Math.round(area).toLocaleString()+' m²)'],['จุดลึกที่สุด',deep<-0.05?(-deep).toFixed(1):'0.0','m'],
+    ['น้ำในบ่อ',WAT.V>0.5?Math.round(WAT.V).toLocaleString():'0','m³'+(WAT.n?' · ผิวน้ำ '+(wetA/1600).toFixed(2)+' ไร่':'')],['ต้นไม้',standing,'ต้น'+(trees.length>standing?' · ล้ม '+(trees.length-standing):'')],['ดินบนรถบรรทุก',(inTruck*TPP).toFixed(1),'t'],['เวลาทำงาน',fmt(elapsed),'']];
+  $('mKpi').replaceChildren(...kp.map(([l,v,u])=>{const d=document.createElement('div');d.innerHTML='<div class="lbl"></div><div class="v"><span></span><small></small></div>';d.querySelector('.lbl').textContent=l;d.querySelector('span').textContent=v;d.querySelector('small').textContent=u;return d}))}
+function sbOverviewClose(){$('sbMap').hidden=true;paused=false}
 function vPose(){const v=vType();if(v==='ex')return{x:E.x,z:E.z,y:exG.position.y,h:E.hd+E.sw,f:E.hd+E.sw,d:14,la:6,oy:0.55};
   if(v==='tr')return{x:T.x,z:T.z,y:truckG.position.y,h:T.hd,f:T.hd,d:17,la:5,oy:0};if(v==='dz')return{x:D.x,z:D.z,y:dozerG.position.y,h:D.hd,f:D.hd,d:13,la:4.5,oy:0};
   return{x:L.x,z:L.z,y:rearG.position.y,h:L.thr,f:L.thr+L.phi,d:13,la:4.5,oy:0}}
@@ -1656,13 +1702,14 @@ function step(dt){
 
 /* ---------- camera ---------- */
 const camPos=new V3(0,6,10),camLook=new V3(),_t=new V3();
-function cycleCam(){camMode=(camMode+1)%3;camYaw=0;toast(['มุมไล่หลัง','มุมคนขับ','มุมบน'][camMode],true)}
+function cycleCam(){camMode=(camMode+1)%(sbOn?4:3);camYaw=0;toast(['มุมไล่หลัง','มุมคนขับ','มุมบน','มุมโดรน (ทั้งไซต์)'][camMode],true)}
 function updCam(dt,snap){const f=snap?1:1-Math.pow(0.004,dt),ex=isEx(),vt=vType(),P=vPose(),X=P.x,Z=P.z,base=P.h,fy=P.f,gy=P.y;
   if(camMode===0){const yaw=base+camYaw+P.oy,pt=camPitch+(ex?0.12:0),d=P.d,la=P.la;_t.set(X-Math.cos(yaw)*d*Math.cos(pt),1.2+gy+d*Math.sin(pt),Z+Math.sin(yaw)*d*Math.cos(pt));camPos.lerp(_t,f);
     _t.set(X+Math.cos(fy)*la,(ex?1.0:1.4)+gy,Z-Math.sin(fy)*la);camLook.lerp(_t,f);camera.fov=58}
   else if(camMode===1&&(vt==='tr'||vt==='dz')){const g=vt==='tr'?truckG:dozerG;_t.set(vt==='tr'?2.9:-0.9,vt==='tr'?3.0:2.6,vt==='tr'?-0.5:0).applyMatrix4(g.matrixWorld);camPos.copy(_t);_t.set(12,0.5,-Math.sin(camYaw)*6).applyMatrix4(g.matrixWorld);camLook.copy(_t);camera.fov=72}
   else if(camMode===1){if(ex){_t.set(0.5,3.15,-0.85).applyMatrix4(exUp.matrixWorld);camPos.copy(_t);_t.set(9,0.2,-0.85-Math.sin(camYaw)*6).applyMatrix4(exUp.matrixWorld)}
     else{_t.set(-0.25,3.25,0).applyMatrix4(rearG.matrixWorld);camPos.copy(_t);_t.set(7.5,0.9,-Math.sin(camYaw)*6).applyMatrix4(frontG.matrixWorld)}camLook.copy(_t);camera.fov=72}
+  else if(camMode===3){_t.set(Math.sin(camYaw)*170,200,Math.cos(camYaw)*170);camPos.lerp(_t,f);_t.set(0,0,0);camLook.lerp(_t,f);camera.fov=50}   // drone: the whole site
   else{_t.set(X+Math.sin(camYaw)*10,26,Z+Math.cos(camYaw)*10);camPos.lerp(_t,f);_t.set(X,0,Z-1);camLook.lerp(_t,f);camera.fov=55}
   camera.position.copy(camPos);camera.lookAt(camLook);camera.updateProjectionMatrix()}
 
@@ -1847,7 +1894,9 @@ function reset(id,run){lv=LEVELS[id];lvId=id;store.set('loaderLv',id);const wasS
 }
 
 $('bSubmit').onclick=()=>{if(state==='run'&&lv.canSubmit&&lv.canSubmit())finish(true)};$('bCam').onclick=cycleCam;for(const b of document.querySelectorAll('#sbBar [data-v]'))b.onclick=()=>sbSwitch(b.dataset.v);
-$('bTree').onclick=()=>{SBTOOL=SBTOOL==='tree'?null:'tree';if(SBTOOL)toast('คลิก/แตะบนพื้นเพื่อปลูกต้นไม้',true);sbBar()};$('bWater').onclick=watToggle;$('bDrain').onclick=watDrain;$('bRight').onclick=()=>{if(sbOn&&state==='run')sbRight()};
+$('bTree').onclick=()=>sbTool('tree','คลิก/แตะบนพื้นเพื่อปลูกต้นไม้');$('bCut').onclick=()=>sbTool('cut','คลิก/แตะที่ต้นไม้เพื่อเอาออก');$('bMap').onclick=sbOverview;
+$('bMapClose').onclick=sbOverviewClose;$('bDrone').onclick=()=>{sbOverviewClose();camMode=3;camYaw=0;toast('มุมโดรน · ลากจอเพื่อหมุน · กด C เพื่อเปลี่ยนมุม',true)};
+$('bTreesAll').onclick=()=>{if(trees.length&&confirm('เอาต้นไม้ออกทั้งหมด '+trees.length+' ต้น?')){for(const t of trees)treeG.remove(t.g);trees.length=0;sbOverview()}};$('bWater').onclick=watToggle;$('bDrain').onclick=watDrain;$('bRight').onclick=()=>{if(sbOn&&state==='run')sbRight()};
 document.getElementById('sbBar').addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur()});$('bSnd').onclick=SND.toggle;SND.btn();$('bReset').onclick=()=>{if(sbOn&&state==='run'){if(confirm('เริ่มไซต์งานใหม่? สิ่งที่ขุด ต้นไม้ และน้ำจะหายไปทั้งหมด'))reset(lvId,true)}else if(state==='run'||state==='done')reset(lvId,true)};$('bHelp').onclick=showHelp;$('bMenu').onclick=showMenu;
 $('bHelp2').onclick=showHelp;$('bResume').onclick=resume;$('bHelpMenu').onclick=showMenu;
 $('bAgain').onclick=()=>reset(lvId,true);$('bNext').onclick=()=>reset($('bNext').dataset.lv,true);$('bRHist').onclick=()=>openHist(lvId);$('bRMenu').onclick=showMenu;
