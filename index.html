@@ -92,9 +92,14 @@ body{background:#b9cedb;color:var(--ink);font-family:var(--body);-webkit-user-se
 .gbar{height:6px;margin-top:5px;border-radius:2px;background:#2a2c2f;overflow:hidden}
 .gbar i{display:block;height:100%;width:0;background:var(--hazard);transition:width .15s}
 .gbar i.full{background:var(--ok)}
-#sbBar{top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:5px;padding:6px;max-width:min(780px,calc(100vw - 700px))}
-#sbBar .btn.on{border-color:var(--hazard);color:var(--hazard)}#sbBar .sep{width:1px;background:rgba(255,255,255,.15);margin:0 3px}
-@media (max-width:640px){#sbBar{top:calc(244px + env(safe-area-inset-top,0px));left:12px;right:12px;transform:none;max-width:none;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:4px}#sbBar kbd{display:none}#sbBar .btn{padding:5px 9px;font-size:12px;white-space:nowrap;flex:none}}
+/* sandbox: slim left panel with the machine picker, tools folded into the right column */
+body.sb #mission .task,body.sb #bar{display:none}
+body.sb #loadrow{margin-top:4px}body.sb #loadrow .big{font-size:22px}body.sb #stats{margin-top:6px}body.sb #stats .v{font-size:13px}
+body.sb #mHint{font-size:11.5px;line-height:1.3}body.sb #mTag{cursor:pointer}body.sb #mTag::after{content:' ▴';color:var(--hazard)}
+body.sb.mini #mTag::after{content:' ▾'}body.sb.mini #mission>*:not(#mTag):not(#loadrow):not(#sbVeh){display:none}
+#sbVeh{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:8px}#sbVeh .btn{min-width:0;padding:6px 2px;font-size:12.5px;letter-spacing:0;white-space:nowrap;overflow:hidden;text-align:center}#sbVeh kbd{margin-left:2px;font-size:10px}
+#sbVeh .btn.on,#sbTools .btn.on,#bToolsBtn.on{border-color:var(--hazard);color:var(--hazard)}
+#sbTools{display:flex;flex-direction:column;gap:6px;padding-left:10px;border-left:2px solid var(--hazard)}#sbTools[hidden]{display:none}
 #prsBar{background:var(--ok);transition:width .08s}#prsBar.hi{background:var(--hazard)}#prsBar.max{background:var(--warn);animation:flick .12s steps(2) infinite}#prs.max{color:var(--warn)}
 @keyframes flick{50%{opacity:.4}}
 .card.wide{width:min(780px,100%)}
@@ -196,6 +201,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
     <div><div class="lbl" id="s2l">ชน</div><div class="v" id="s2">0</div></div>
   </div>
   <div id="mHint"></div>
+  <div id="sbVeh" hidden><button class="btn" data-v="ex" type="button">ขุด<kbd>1</kbd></button><button class="btn" data-v="ld" type="button">ตัก<kbd>2</kbd></button><button class="btn" data-v="tr" type="button">บรรทุก<kbd>3</kbd></button><button class="btn" data-v="dz" type="button">ไถ<kbd>4</kbd></button></div>
 </div>
 
 <div class="hud" id="tools">
@@ -203,14 +209,13 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
   <button class="btn" id="bReset" type="button">เริ่มใหม่<kbd>R</kbd></button>
   <button class="btn" id="bHelp" type="button">วิธีบังคับ<kbd>H</kbd></button>
   <button class="btn" id="bMenu" type="button">เลือกด่าน<kbd>M</kbd></button>
+  <button class="btn sbOnly" id="bMap" type="button" hidden>ภาพรวม<kbd>G</kbd></button>
+  <button class="btn sbOnly" id="bToolsBtn" type="button" hidden aria-expanded="false">เครื่องมือ ▾</button>
+  <div id="sbTools" hidden><button class="btn" id="bTree" type="button">ปลูกต้นไม้<kbd>T</kbd></button><button class="btn" id="bCut" type="button">เอาต้นไม้ออก<kbd>X</kbd></button><button class="btn" id="bWater" type="button">เปิดน้ำ<kbd>O</kbd></button><button class="btn" id="bDrain" type="button" hidden>สูบน้ำออก<kbd>P</kbd></button><button class="btn" id="bRight" type="button">ตั้งรถใหม่<kbd>R</kbd></button></div>
   <button class="btn" id="bSnd" type="button">เสียง: เปิด<kbd>V</kbd></button>
   <button class="btn" id="bSubmit" type="button" hidden style="border-color:var(--ok)">ส่งงาน<kbd>⏎</kbd></button>
 </div>
 
-<div class="hud" id="sbBar" hidden>
-  <button class="btn" data-v="ex" type="button">รถขุด<kbd>1</kbd></button><button class="btn" data-v="ld" type="button">รถตัก<kbd>2</kbd></button><button class="btn" data-v="tr" type="button">รถบรรทุก<kbd>3</kbd></button><button class="btn" data-v="dz" type="button">รถไถ<kbd>4</kbd></button>
-  <span class="sep"></span><button class="btn" id="bTree" type="button">ปลูกต้นไม้<kbd>T</kbd></button><button class="btn" id="bWater" type="button">เปิดน้ำ<kbd>O</kbd></button><button class="btn" id="bDrain" type="button" hidden>สูบน้ำออก<kbd>P</kbd></button><button class="btn" id="bCut" type="button">เอาต้นไม้ออก<kbd>X</kbd></button><button class="btn" id="bRight" type="button">ตั้งรถใหม่<kbd>R</kbd></button><button class="btn" id="bMap" type="button">ภาพรวม<kbd>G</kbd></button>
-</div>
 <div class="hud" id="gauges">
   <div class="g"><div class="lbl">ความเร็ว</div><div class="v"><span id="gear">N</span><span id="spd">0</span><small>km/h</small></div></div>
   <div class="g"><div class="lbl" id="glBh">สูงบุ้งกี๋</div><div class="v" id="bh">0.0<small>m</small></div><div class="sub" id="bhSub"></div></div>
@@ -1303,11 +1308,11 @@ sandbox:{id:'sandbox',sandbox:true,machine:'ex',n:'โหมดอิสระ',
   brief:'พื้นที่ 283 × 283 m (50 ไร่) ขุดได้ทุกจุดลึกถึง 20 m มีรถขุด รถตัก รถบรรทุก และรถไถในฉากเดียว สลับขับได้ ปลูกต้นไม้ และเปิดน้ำเข้าบ่อ ไม่จับเวลา ไม่คิดคะแนน',
   task:'ไซต์งานอิสระ 50 ไร่: ขุด ขนดินไปทิ้ง เกลี่ยดิน ปลูกต้นไม้ และเปิดน้ำเข้าบ่อได้ตามต้องการ',
   tip:'เทคนิค: ขุดลึกต้องทำเป็นขั้นบันไดหรือทางลาดให้รถลงไปได้ ผนังดินที่ชันเกินจะพังลงมา ใช้รถขุดตักใส่รถบรรทุก (กด 3 เพื่อขับรถบรรทุกไปเท) แล้วใช้รถไถ (กด 4) ลดใบมีดลงเกลี่ยกองดินให้เรียบ',
-  labels:['ระดับต่ำสุด','ดินบนรถบรรทุก','น้ำในบ่อ'],
+  labels:['ลึกสุด','ดินบนรถ','น้ำในบ่อ'],
   setup(){G={}},tick(){},
   hud(){const hint=SBTOOL==='tree'?'คลิก/แตะบนพื้นเพื่อปลูกต้นไม้ · กด T อีกครั้งเพื่อเลิก':SBTOOL==='water'?'คลิก/แตะในหลุมหรือบ่อ เพื่อวางท่อน้ำ':
       {ex:'รถขุด: W/S แขน · A/D หมุนป้อม · ↑/↓ บูม · ←/→ บุ้งกี๋ · I/K/J/L เดินรถ',ld:'รถตัก: W/S ขับ · A/D เลี้ยว · ↑/↓ บูม · ←/→ บุ้งกี๋ · ขับเข้ากองดินเพื่อตัก',tr:'รถบรรทุก: W/S ขับ · A/D เลี้ยว · ↑ ยกกระบะเทดิน · ↓ ลดกระบะ',dz:'รถไถ: W/S เดินหน้า/ถอย · A/D เลี้ยว · ↓ กดใบมีดลง · ↑ ยกใบมีด'}[SBV]+' · สลับรถ 1–4';
-    return{big:VNAME[SBV],of:'· ไซต์งาน 50 ไร่ · โหมดอิสระ',pct:0,s:[(sbMinH<-0.05?'−'+(-sbMinH).toFixed(1):'0.0')+' m',(inTruck*TPP).toFixed(1)+' t',WAT.V>0.5?Math.round(WAT.V).toLocaleString()+' m³':'—'],bad:[false,false,false],hint}},
+    return{big:VNAME[SBV],of:SBTOOL?'':'· กด G ดูภาพรวม',pct:0,s:[(sbMinH<-0.05?'−'+(-sbMinH).toFixed(1):'0.0')+' m',(inTruck*TPP).toFixed(1)+' t',WAT.V>0.5?Math.round(WAT.V).toLocaleString()+' m³':'—'],bad:[false,false,false],hint}},
   result(){return{score:0,title:'',rows:[],m:{}}},key:()=>''},
 };
 // pass criteria: every item must hold; a level counts as passed when PASS_NEED of the last PASS_WIN attempts pass
@@ -1564,8 +1569,10 @@ function sbEnter(){sbBuild();sbGen();for(const c of sbChunks)c.dirty=true;sbSync
   Object.assign(L,{x:-14,z:8,thr:Math.PI/2,phi:0,v:0,beta:-14*DEG,alpha:0});applyT();updCyl();
   Object.assign(T,{x:9,z:4,hd:Math.PI/2,v:0,st:0,bed:0});truckPose();Object.assign(D,{x:-8,z:-15,hd:Math.PI/2,v:0,blade:0.3,cut:0});dozerPose();vbInv();sbBar()}
 function sbLeave(){if(camMode===3)camMode=0;$('sbMap').hidden=true;for(const o of arenaHidden)o.visible=true;arenaHidden=[];sbG.visible=false;dozerG.visible=false;BOUND=35;scene.fog.near=70;scene.fog.far=160;camera.far=400;camera.updateProjectionMatrix();
-  sun.position.set(22,34,14);sun.target.position.set(0,0,0);sun.target.updateMatrixWorld();T.bed=0;SBTOOL=null;$('sbBar').hidden=true}
-function sbBar(){const b=$('sbBar');b.hidden=!sbOn;if(!sbOn)return;for(const e of b.querySelectorAll('[data-v]'))e.classList.toggle('on',e.dataset.v===SBV);
+  sun.position.set(22,34,14);sun.target.position.set(0,0,0);sun.target.updateMatrixWorld();T.bed=0;SBTOOL=null}
+function sbBar(){document.body.classList.toggle('sb',sbOn);$('sbVeh').hidden=!sbOn;$('bMap').hidden=$('bToolsBtn').hidden=!sbOn;if(!sbOn){$('sbTools').hidden=true;document.body.classList.remove('mini');return}
+  for(const e of $('sbVeh').querySelectorAll('[data-v]'))e.classList.toggle('on',e.dataset.v===SBV);
+  const tn={tree:'ปลูกต้นไม้',cut:'เอาต้นไม้ออก',water:'วางท่อน้ำ'}[SBTOOL];$('bToolsBtn').textContent=tn?'✓ '+tn:(WAT.on?'เครื่องมือ · น้ำไหล ▾':'เครื่องมือ ▾');$('bToolsBtn').classList.toggle('on',!!tn||WAT.on);
   $('bTree').classList.toggle('on',SBTOOL==='tree');$('bCut').classList.toggle('on',SBTOOL==='cut');$('bWater').classList.toggle('on',WAT.on||SBTOOL==='water');$('bWater').firstChild.textContent=WAT.on?'ปิดน้ำ':'เปิดน้ำ';
   $('bDrain').hidden=!(WAT.V>0||WAT.drain);$('bDrain').firstChild.textContent=WAT.drain?'หยุดสูบ':'สูบน้ำออก';cv.style.cursor=SBTOOL?'crosshair':''}
 const _ray=new THREE.Raycaster(),_ndc=new THREE.Vector2();
@@ -1893,11 +1900,14 @@ function reset(id,run){lv=LEVELS[id];lvId=id;store.set('loaderLv',id);const wasS
   state=run?'run':'menu';paused=false;if(!run){buildMenu();$('menu').hidden=false}
 }
 
-$('bSubmit').onclick=()=>{if(state==='run'&&lv.canSubmit&&lv.canSubmit())finish(true)};$('bCam').onclick=cycleCam;for(const b of document.querySelectorAll('#sbBar [data-v]'))b.onclick=()=>sbSwitch(b.dataset.v);
+$('bSubmit').onclick=()=>{if(state==='run'&&lv.canSubmit&&lv.canSubmit())finish(true)};$('bCam').onclick=cycleCam;for(const b of document.querySelectorAll('#sbVeh [data-v]'))b.onclick=()=>sbSwitch(b.dataset.v);
+$('bToolsBtn').onclick=()=>{if(SBTOOL){SBTOOL=null;$('sbTools').hidden=true}else $('sbTools').hidden=!$('sbTools').hidden;$('bToolsBtn').setAttribute('aria-expanded',String(!$('sbTools').hidden));sbBar()};
+for(const id of ['bTree','bCut','bWater','bDrain','bRight'])$(id).addEventListener('click',()=>{$('sbTools').hidden=true});
+$('mTag').onclick=()=>{if(sbOn)document.body.classList.toggle('mini')};
 $('bTree').onclick=()=>sbTool('tree','คลิก/แตะบนพื้นเพื่อปลูกต้นไม้');$('bCut').onclick=()=>sbTool('cut','คลิก/แตะที่ต้นไม้เพื่อเอาออก');$('bMap').onclick=sbOverview;
 $('bMapClose').onclick=sbOverviewClose;$('bDrone').onclick=()=>{sbOverviewClose();camMode=3;camYaw=0;toast('มุมโดรน · ลากจอเพื่อหมุน · กด C เพื่อเปลี่ยนมุม',true)};
 $('bTreesAll').onclick=()=>{if(trees.length&&confirm('เอาต้นไม้ออกทั้งหมด '+trees.length+' ต้น?')){for(const t of trees)treeG.remove(t.g);trees.length=0;sbOverview()}};$('bWater').onclick=watToggle;$('bDrain').onclick=watDrain;$('bRight').onclick=()=>{if(sbOn&&state==='run')sbRight()};
-document.getElementById('sbBar').addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur()});$('bSnd').onclick=SND.toggle;SND.btn();$('bReset').onclick=()=>{if(sbOn&&state==='run'){if(confirm('เริ่มไซต์งานใหม่? สิ่งที่ขุด ต้นไม้ และน้ำจะหายไปทั้งหมด'))reset(lvId,true)}else if(state==='run'||state==='done')reset(lvId,true)};$('bHelp').onclick=showHelp;$('bMenu').onclick=showMenu;
+for(const id of ['sbVeh','sbTools'])document.getElementById(id).addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur()});$('bSnd').onclick=SND.toggle;SND.btn();$('bReset').onclick=()=>{if(sbOn&&state==='run'){if(confirm('เริ่มไซต์งานใหม่? สิ่งที่ขุด ต้นไม้ และน้ำจะหายไปทั้งหมด'))reset(lvId,true)}else if(state==='run'||state==='done')reset(lvId,true)};$('bHelp').onclick=showHelp;$('bMenu').onclick=showMenu;
 $('bHelp2').onclick=showHelp;$('bResume').onclick=resume;$('bHelpMenu').onclick=showMenu;
 $('bAgain').onclick=()=>reset(lvId,true);$('bNext').onclick=()=>reset($('bNext').dataset.lv,true);$('bRHist').onclick=()=>openHist(lvId);$('bRMenu').onclick=showMenu;
 $('bHist').onclick=()=>openHist(lvId);$('bReady').onclick=openReady;$('bRdClose').onclick=()=>{$('ready').hidden=true;buildMenu()};$('bRdPrint').onclick=()=>window.print();$('bRdGo').onclick=()=>reset($('bRdGo').dataset.lv,true);$('bHistClose').onclick=closeHist;$('bCsv').onclick=exportCSV;
