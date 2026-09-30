@@ -121,7 +121,7 @@ input.name:focus-visible{outline:2px solid var(--hazard);outline-offset:1px}
 .tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--hazard)}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 10px}
 #sbMap .kpis{margin:10px 0 8px}#sbMap .kpis div{padding:6px 9px}#sbMap .kpis .v{font-size:16px}#sbMap h1{margin-bottom:6px}
-#mapCv{display:block;width:100%;max-width:min(569px,calc(100vh - 360px));min-width:240px;margin:0 auto;aspect-ratio:1;border-radius:6px;image-rendering:auto;background:#d6c6a6}
+#mapCv{display:block;width:100%;max-width:min(543px,calc(100vh - 360px));min-width:240px;margin:0 auto;aspect-ratio:1;border-radius:6px;image-rendering:auto;background:#d6c6a6}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mute);margin:8px 0 4px}.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .kpis div{background:#1f2124;border-radius:5px;padding:8px 10px}
 .kpis .v{font-family:var(--mono);font-size:20px;margin-top:2px}
@@ -322,11 +322,11 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
 
 <div class="overlay" id="sbMap" hidden>
   <div class="card wide">
-    <div class="lbl">โหมดอิสระ · ไซต์งาน 50 ไร่ (283 × 283 m)</div>
+    <div class="lbl">โหมดอิสระ · ไซต์งาน 5 ไร่ (90 × 90 m)</div>
     <h1>ภาพรวมโครงการ</h1>
     <div class="row"><button class="go sm" id="bMapClose" type="button">กลับไปทำงาน</button><button class="go sec" id="bDrone" type="button">ดูมุมโดรน 3 มิติ</button><button class="go sec" id="bTreesAll" type="button">เอาต้นไม้ออกทั้งหมด</button></div>
     <div class="kpis" id="mKpi"></div>
-    <canvas id="mapCv" width="569" height="569" role="img" aria-label="แผนที่ไซต์งานมุมบน: สีฟ้าคือที่ขุด เข้มตามความลึก สีน้ำตาลคือที่ถม"></canvas>
+    <canvas id="mapCv" width="543" height="543" role="img" aria-label="แผนที่ไซต์งานมุมบน: สีฟ้าคือที่ขุด เข้มตามความลึก สีน้ำตาลคือที่ถม"></canvas>
     <div class="legend"><span><i style="background:#b0d0ec"></i>ขุดตื้น</span><span><i style="background:#123480"></i>ขุดลึก (เส้นทุก 2 m)</span><span><i style="background:#ecc480"></i>ถมเล็กน้อย</span><span><i style="background:#924e1e"></i>ถมสูง</span><span><i style="background:#3cc8d7"></i>น้ำ</span><span><i style="background:#2f7a2c;border-radius:50%"></i>ต้นไม้</span><span><i style="background:#d6c6a6"></i>ยังไม่ได้ทำ</span></div>
   </div>
 </div>
@@ -1304,9 +1304,9 @@ ex_slope:{id:'ex_slope',machine:'ex',n:'รถขุด 6',name:'ขุดบน
       m:{dug:Math.round(s.dug*100),zone:Math.round(s.zone*100),minst:Math.round(G.minSt*100),warn:G.warn,tip:tip?1:0,gnd:gndHits}}},
   key:r=>num(r.tip)?'พลิกคว่ำ':`ขุด ${r.dug??0}% · เสถียรต่ำสุด ${r.minst??0}% · เตือน ${r.warn??0}`},
 
-sandbox:{id:'sandbox',sandbox:true,machine:'ex',n:'โหมดอิสระ',name:'ไซต์งาน 50 ไร่',limit:Infinity,pile:false,truck:true,pit:'sb',start:{x:0,z:0,hd:Math.PI/2},grades:[1,1,1],
-  brief:'พื้นที่ 283 × 283 m (50 ไร่) ขุดได้ทุกจุดลึกถึง 20 m มีรถขุด รถตัก รถบรรทุก และรถไถในฉากเดียว สลับขับได้ ปลูกต้นไม้ และเปิดน้ำเข้าบ่อ ไม่จับเวลา ไม่คิดคะแนน',
-  task:'ไซต์งานอิสระ 50 ไร่: ขุด ขนดินไปทิ้ง เกลี่ยดิน ปลูกต้นไม้ และเปิดน้ำเข้าบ่อได้ตามต้องการ',
+sandbox:{id:'sandbox',sandbox:true,machine:'ex',n:'โหมดอิสระ',name:'ไซต์งาน 5 ไร่',limit:Infinity,pile:false,truck:true,pit:'sb',start:{x:0,z:0,hd:Math.PI/2},grades:[1,1,1],
+  brief:'พื้นที่ 90 × 90 m (5 ไร่) ขุดได้ทุกจุดลึกถึง 20 m มีรถขุด รถตัก รถบรรทุก และรถไถในฉากเดียว สลับขับได้ ปลูกต้นไม้ และเปิดน้ำเข้าบ่อ ไม่จับเวลา ไม่คิดคะแนน',
+  task:'ไซต์งานอิสระ 5 ไร่: ขุด ขนดินไปทิ้ง เกลี่ยดิน ปลูกต้นไม้ และเปิดน้ำเข้าบ่อได้ตามต้องการ',
   tip:'เทคนิค: ขุดลึกต้องทำเป็นขั้นบันไดหรือทางลาดให้รถลงไปได้ ผนังดินที่ชันเกินจะพังลงมา ใช้รถขุดตักใส่รถบรรทุก (กด 3 เพื่อขับรถบรรทุกไปเท) แล้วใช้รถไถ (กด 4) ลดใบมีดลงเกลี่ยกองดินให้เรียบ',
   labels:['ลึกสุด','ดินบนรถ','น้ำในบ่อ'],
   setup(){G={}},tick(){},
@@ -1372,8 +1372,8 @@ const lvIds=m=>LV_ORDER.filter(id=>(LEVELS[id].machine||'loader')===m);
 const nextLv=m=>lvIds(m).find(id=>!lvStatus(id).passed);
 let lvId=store.get('loaderLv','slalom');if(!LEVELS[lvId])lvId='slalom';let lv=LEVELS[lvId];
 
-/* ================= โหมดอิสระ (sandbox): a 50-rai site (≈283 × 283 m), dig anywhere down to 20 m, four machines ================= */
-const SB={id:'sb',kind:'terrain',x0:-142,x1:142,z0:-142,z1:142,cs:0.5,maxd:20,d:20};
+/* ================= โหมดอิสระ (sandbox): a 5-rai site (90 × 90 m), dig anywhere down to 20 m, four machines ================= */
+const SB={id:'sb',kind:'terrain',x0:-45,x1:45,z0:-45,z1:45,cs:0.5,maxd:20,d:20};
 SB.nx=Math.round((SB.x1-SB.x0)/SB.cs)+1;SB.nz=Math.round((SB.z1-SB.z0)/SB.cs)+1;
 SB.TH=new Float32Array(SB.nx*SB.nz);SB.LSO=new Float32Array(SB.nx*SB.nz);SB.H0=new Float32Array(SB.nx*SB.nz);PITS.sb=SB;   // H0: ground at the start, for cut/fill
 function useTerrain(T){if(T===SB){DIG=SB;TH=SB.TH;LSO=SB.LSO}else{DIG=DIGS;TH=THS;LSO=LSOS}}
@@ -1382,9 +1382,9 @@ let SBTOOL=null,sbMinH=0,sbMinT=0;
 const sbG=new THREE.Group();sbG.visible=false;scene.add(sbG);scene.add(sun.target);
 // initial ground: flat work area in the middle, gentle undulation, two natural hills and a stockpile of loose soil
 function sbGen(){const {nx,nz,x0,z0,cs,TH:T,LSO:Lo}=SB;
-  for(let k=0;k<nz;k++)for(let i=0;i<nx;i++){const x=x0+i*cs,z=z0+k*cs,r=Math.hypot(x,z),edge=clamp((142-Math.max(Math.abs(x),Math.abs(z)))/12,0,1);
-    let h=(0.35*Math.sin(x/23+1.3)*Math.cos(z/19)+0.25*Math.sin((x+z)/11)+0.15*Math.cos(x/7-z/9))*clamp((r-22)/30,0,1);
-    h+=6*Math.exp(-((x-70)**2+(z+60)**2)/900)+3.5*Math.exp(-((x+85)**2+(z-45)**2)/500);
+  for(let k=0;k<nz;k++)for(let i=0;i<nx;i++){const x=x0+i*cs,z=z0+k*cs,r=Math.hypot(x,z),edge=clamp((45-Math.max(Math.abs(x),Math.abs(z)))/6,0,1);
+    let h=(0.35*Math.sin(x/23+1.3)*Math.cos(z/19)+0.25*Math.sin((x+z)/11)+0.15*Math.cos(x/7-z/9))*clamp((r-16)/14,0,1);
+    h+=4*Math.exp(-((x-30)**2+(z-30)**2)/200)+2.5*Math.exp(-((x+32)**2+(z+30)**2)/150);
     T[k*nx+i]=h*edge;Lo[k*nx+i]=0}
   for(const [cx,cz,rad,ht] of [[-24,-4,7,2.6],[16,-26,5,1.8]]){const r0=Math.ceil(rad/cs);const ci=Math.round((cx-x0)/cs),ck=Math.round((cz-z0)/cs);
     for(let k=-r0;k<=r0;k++)for(let i=-r0;i<=r0;i++){const d=Math.hypot(i,k)*cs;if(d<rad)Lo[(ck+k)*nx+ci+i]+=ht*(1-d/rad)}}
@@ -1562,7 +1562,7 @@ function sbFrame(dt){const p=vPose();sun.position.set(p.x+22,p.y+34,p.z+14);sun.
 let arenaHidden=[];const SB_KEEP=()=>new Set([exG,rearG,frontG,truckG,dozerG,sbG,soil,soilCore,soilSplat,sun.target]);
 function sbEnter(){sbBuild();sbGen();for(const c of sbChunks)c.dirty=true;sbSync();SLR.i0=1;SLR.i1=0;
   if(!arenaHidden.length){const keep=SB_KEEP();for(const o of scene.children){if(keep.has(o)||o.isLight||!o.visible)continue;o.visible=false;arenaHidden.push(o)}}
-  sbG.visible=true;dozerG.visible=true;BOUND=140;scene.fog.near=q>=2?90:60;scene.fog.far=q>=2?330:220;   // lower quality tiers see less farcamera.far=800;camera.updateProjectionMatrix();
+  sbG.visible=true;dozerG.visible=true;BOUND=43;scene.fog.near=q>=2?90:60;scene.fog.far=q>=2?330:220;camera.far=800;camera.updateProjectionMatrix();   // lower quality tiers see less far
   for(const t of trees)treeG.remove(t.g);trees.length=0;Object.assign(WAT,{V:0,on:false,drain:false,inlet:-1,w:0,full:false,dirty:true,n:0});pipeG.visible=false;SBTOOL=null;
   N=0;soil.count=0;cutAcc=0;spawnK=0;SBV='ex';
   Object.assign(E,{x:0,z:0,hd:Math.PI/2,sw:0,bm:35*DEG,ar:-100*DEG,bk:-60*DEG,v:0});exApplyT();
@@ -1587,7 +1587,7 @@ function removeTree(t){treeG.remove(t.g);trees.splice(trees.indexOf(t),1);toast(
 function sbTool(t,msg){SBTOOL=SBTOOL===t?null:t;if(SBTOOL)toast(msg,true);sbBar()}
 /* ---- project overview: plan map of cut (blue, by depth) and fill (brown) against the starting ground, water, trees, machines, and totals ---- */
 function sbOverview(){if(!sbOn||state!=='run')return;paused=true;$('sbMap').hidden=false;SBTOOL=null;sbBar();
-  const nx=SB.nx,nz=SB.nz,a=SB.cs*SB.cs,T0=SB.TH,Lo=SB.LSO,H0=SB.H0,cv2=$('mapCv'),g=cv2.getContext('2d'),img=g.createImageData(nx,nz),D=img.data;
+  const nx=SB.nx,nz=SB.nz,a=SB.cs*SB.cs,T0=SB.TH,Lo=SB.LSO,H0=SB.H0,cv2=$('mapCv'),g=cv2.getContext('2d'),W=cv2.width,off=document.createElement('canvas');off.width=nx;off.height=nz;const img=off.getContext('2d').createImageData(nx,nz),D=img.data;
   let cut=0,fill=0,area=0,deep=0,wetA=0;const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
   for(let k=0;k<nz;k++)for(let i=0;i<nx;i++){const n=k*nx+i,h=T0[n]+Lo[n],d=h-H0[n];
     if(d<0)cut-=d*a;else fill+=d*a;if(Math.abs(d)>0.1)area+=a;if(h<deep)deep=h;
@@ -1597,16 +1597,16 @@ function sbOverview(){if(!sbOn||state!=='run')return;paused=true;$('sbMap').hidd
     if(WAT.n&&watFlag[n]===1&&h<WAT.w-0.03){c=mix(c,[60,200,215],0.88);wetA+=a}
     if(d<-0.1){const b=Math.floor(d/2);if(Math.floor((sbH(i+1,k)-H0[Math.min(n+1,H0.length-1)])/2)!==b||Math.floor((sbH(i,k+1)-H0[Math.min(n+nx,H0.length-1)])/2)!==b)c=mix(c,[10,30,80],0.45)}   // 2 m depth contours
     const f=clamp(1+sl*0.18,0.7,1.25),o=n*4;D[o]=c[0]*f;D[o+1]=c[1]*f;D[o+2]=c[2]*f;D[o+3]=255}
-  g.putImageData(img,0,0);const px=x=>(x-SB.x0)/SB.cs,pz=z=>(z-SB.z0)/SB.cs,ppm=1/SB.cs;
+  off.getContext('2d').putImageData(img,0,0);g.imageSmoothingEnabled=true;g.drawImage(off,0,0,W,W);const ppm=W/(SB.x1-SB.x0),px=x=>(x-SB.x0)*ppm,pz=z=>(z-SB.z0)*ppm;
   g.strokeStyle='rgba(0,0,0,.14)';g.lineWidth=1;g.font='11px sans-serif';g.fillStyle='rgba(0,0,0,.45)';
-  for(let v=-100;v<=100;v+=50){g.beginPath();g.moveTo(px(v),0);g.lineTo(px(v),nz);g.moveTo(0,pz(v));g.lineTo(nx,pz(v));g.stroke();g.fillText(v+' m',px(v)+3,12);g.fillText(v+' m',3,pz(v)-3)}
+  for(let v=-40;v<=40;v+=20){g.beginPath();g.moveTo(px(v),0);g.lineTo(px(v),W);g.moveTo(0,pz(v));g.lineTo(W,pz(v));g.stroke();g.fillText(v+' m',px(v)+3,12);g.fillText(v+' m',3,pz(v)-3)}
   for(const t of trees){g.fillStyle=t.fall?'#7a5a32':'#2f7a2c';g.beginPath();g.arc(px(t.x),pz(t.z),t.fall?2:3.2,0,6.3);g.fill()}
   if(WAT.inlet>=0){g.fillStyle='#1d4f8a';g.fillRect(px(pipeG.position.x+0.95)-3,pz(pipeG.position.z)-3,6,6)}
   const veh=[['ex',E.x,E.z,E.hd,4.4,3.0,'#e7a21a'],['ld',L.x,L.z,L.thr,7.5,2.6,'#f0b429'],['tr',T.x,T.z,T.hd,7.8,2.8,'#3c6e8f'],['dz',D.x,D.z,D.hd,5.4,3.9,'#c98a12']];
   for(const [v,x,z,hd,l,w,col] of veh){g.save();g.translate(px(x),pz(z));g.rotate(-hd);g.fillStyle=col;g.strokeStyle=v===SBV?'#fff':'#222';g.lineWidth=v===SBV?2.5:1;
     g.fillRect(-l*ppm/2,-w*ppm/2,l*ppm,w*ppm);g.strokeRect(-l*ppm/2,-w*ppm/2,l*ppm,w*ppm);g.fillStyle='#222';g.beginPath();g.moveTo(l*ppm/2+5,0);g.lineTo(l*ppm/2-1,-4);g.lineTo(l*ppm/2-1,4);g.fill();g.restore();
     g.font='bold 12px sans-serif';g.fillStyle='#111';g.fillText(VNAME[v],px(x)+10,pz(z)-10)}
-  g.fillStyle='#111';g.fillRect(nx-80,nz-18,50*ppm/2.5*1,4);g.font='11px sans-serif';g.fillText('20 m',nx-80,nz-22);g.font='bold 14px sans-serif';g.fillText('N ↑',nx-34,20);
+  g.fillStyle='#111';g.fillRect(W-30-10*ppm,W-18,10*ppm,4);g.font='11px sans-serif';g.fillText('10 m',W-30-10*ppm,W-22);g.font='bold 14px sans-serif';g.fillText('N ↑',W-34,20);
   const standing=trees.filter(t=>!t.fall).length,rai=area/1600,kp=[['ดินที่ขุดออก',Math.round(cut).toLocaleString(),'m³'],['ดินที่ถม/กอง',Math.round(fill).toLocaleString(),'m³'],['พื้นที่ที่ทำแล้ว',rai.toFixed(2),'ไร่ ('+Math.round(area).toLocaleString()+' m²)'],['จุดลึกที่สุด',deep<-0.05?(-deep).toFixed(1):'0.0','m'],
     ['น้ำในบ่อ',WAT.V>0.5?Math.round(WAT.V).toLocaleString():'0','m³'+(WAT.n?' · ผิวน้ำ '+(wetA/1600).toFixed(2)+' ไร่':'')],['ต้นไม้',standing,'ต้น'+(trees.length>standing?' · ล้ม '+(trees.length-standing):'')],['ดินบนรถบรรทุก',(inTruck*TPP).toFixed(1),'t'],['เวลาทำงาน',fmt(elapsed),'']];
   $('mKpi').replaceChildren(...kp.map(([l,v,u])=>{const d=document.createElement('div');d.innerHTML='<div class="lbl"></div><div class="v"><span></span><small></small></div>';d.querySelector('.lbl').textContent=l;d.querySelector('span').textContent=v;d.querySelector('small').textContent=u;return d}))}
@@ -1716,7 +1716,7 @@ function updCam(dt,snap){const f=snap?1:1-Math.pow(0.004,dt),ex=isEx(),vt=vType(
   else if(camMode===1&&(vt==='tr'||vt==='dz')){const g=vt==='tr'?truckG:dozerG;_t.set(vt==='tr'?2.9:-0.9,vt==='tr'?3.0:2.6,vt==='tr'?-0.5:0).applyMatrix4(g.matrixWorld);camPos.copy(_t);_t.set(12,0.5,-Math.sin(camYaw)*6).applyMatrix4(g.matrixWorld);camLook.copy(_t);camera.fov=72}
   else if(camMode===1){if(ex){_t.set(0.5,3.15,-0.85).applyMatrix4(exUp.matrixWorld);camPos.copy(_t);_t.set(9,0.2,-0.85-Math.sin(camYaw)*6).applyMatrix4(exUp.matrixWorld)}
     else{_t.set(-0.25,3.25,0).applyMatrix4(rearG.matrixWorld);camPos.copy(_t);_t.set(7.5,0.9,-Math.sin(camYaw)*6).applyMatrix4(frontG.matrixWorld)}camLook.copy(_t);camera.fov=72}
-  else if(camMode===3){_t.set(Math.sin(camYaw)*170,200,Math.cos(camYaw)*170);camPos.lerp(_t,f);_t.set(0,0,0);camLook.lerp(_t,f);camera.fov=50}   // drone: the whole site
+  else if(camMode===3){_t.set(Math.sin(camYaw)*62,78,Math.cos(camYaw)*62);camPos.lerp(_t,f);_t.set(0,0,0);camLook.lerp(_t,f);camera.fov=50}   // drone: the whole site
   else{_t.set(X+Math.sin(camYaw)*10,26,Z+Math.cos(camYaw)*10);camPos.lerp(_t,f);_t.set(X,0,Z-1);camLook.lerp(_t,f);camera.fov=55}
   camera.position.copy(camPos);camera.lookAt(camLook);camera.updateProjectionMatrix()}
 
