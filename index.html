@@ -51,6 +51,7 @@ body{background:#b9cedb;color:var(--ink);font-family:var(--body);-webkit-user-se
 #gauges{bottom:calc(12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:0;padding:0}
 .g{padding:8px 14px;border-right:1px solid rgba(255,255,255,.08);min-width:76px}
 .g:last-child{border-right:0}
+#gMach{background:rgba(242,176,30,.13);border-radius:6px 0 0 6px}#gMach .v{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:.02em;color:var(--hazard)}#machSw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:1px;background:var(--hazard)}#machSub{font-size:11px;color:var(--mute);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}#machSub:empty{display:none}
 .g .v{font-family:var(--mono);font-size:18px;margin-top:2px;white-space:nowrap}
 .g .v small{font-size:11px;color:var(--mute);margin-left:2px}
 #gear{display:inline-block;font-family:var(--display);font-weight:700;font-size:15px;padding:0 6px;border-radius:3px;background:#2b2d30;margin-right:6px}
@@ -184,6 +185,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
   #loadrow .big{font-size:26px}
   .g{padding:6px 8px;min-width:0}
   .g .v{font-size:14px}
+  #gMach .v{font-size:15px}#machSw{display:none}
   .btn{min-width:0;padding:7px 10px;font-size:13px}
   .btn kbd{display:none}
   #gauges{bottom:calc(8px + env(safe-area-inset-bottom,0px))}
@@ -224,6 +226,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
 </div>
 
 <div class="hud" id="gauges">
+  <div class="g" id="gMach"><div class="lbl">กำลังขับ</div><div class="v" id="mach"><i id="machSw"></i><span id="machN">รถตัก</span></div><div class="sub" id="machSub"></div></div>
   <div class="g"><div class="lbl">ความเร็ว</div><div class="v"><span id="gear">N</span><span id="spd">0</span><small>km/h</small></div></div>
   <div class="g"><div class="lbl" id="glBh">สูงบุ้งกี๋</div><div class="v" id="bh">0.0<small>m</small></div><div class="sub" id="bhSub"></div></div>
   <div class="g gHideS"><div class="lbl" id="glBoom">บูม</div><div class="v" id="boom">0°</div></div>
@@ -1405,7 +1408,7 @@ const SB={id:'sb',kind:'terrain',x0:-45,x1:45,z0:-45,z1:45,cs:0.5,maxd:20,d:20};
 SB.nx=Math.round((SB.x1-SB.x0)/SB.cs)+1;SB.nz=Math.round((SB.z1-SB.z0)/SB.cs)+1;
 SB.TH=new Float32Array(SB.nx*SB.nz);SB.LSO=new Float32Array(SB.nx*SB.nz);SB.H0=new Float32Array(SB.nx*SB.nz);PITS.sb=SB;   // H0: ground at the start, for cut/fill
 function useTerrain(T){if(T===SB){DIG=SB;TH=SB.TH;LSO=SB.LSO}else{DIG=DIGS;TH=THS;LSO=LSOS}}
-const VNAME={ex:'รถขุด',ld:'รถตัก',tr:'รถบรรทุก',dz:'รถไถ'},VORDER=['ex','ld','tr','dz'];
+const VNAME={ex:'รถขุด',ld:'รถตัก',tr:'รถบรรทุก',dz:'รถไถ'},VCOL={ex:'#e7a21a',ld:'#f0b429',tr:'#3c6e8f',dz:'#c98a12'},VORDER=['ex','ld','tr','dz'];
 let SBTOOL=null,sbMinH=0,sbMinT=0;
 const sbG=new THREE.Group();sbG.visible=false;scene.add(sbG);scene.add(sun.target);
 // initial ground: flat work area in the middle, gentle undulation, two natural hills and a stockpile of loose soil
@@ -1630,7 +1633,7 @@ function sbOverview(){if(!sbOn||state!=='run')return;paused=true;$('sbMap').hidd
   for(let v=-40;v<=40;v+=20){g.beginPath();g.moveTo(px(v),0);g.lineTo(px(v),W);g.moveTo(0,pz(v));g.lineTo(W,pz(v));g.stroke();g.fillText(v+' m',px(v)+3,12);g.fillText(v+' m',3,pz(v)-3)}
   for(const t of trees){g.fillStyle=t.fall?'#7a5a32':'#2f7a2c';g.beginPath();g.arc(px(t.x),pz(t.z),t.fall?2:3.2,0,6.3);g.fill()}
   if(WAT.inlet>=0){g.fillStyle='#1d4f8a';g.fillRect(px(pipeG.position.x+0.95)-3,pz(pipeG.position.z)-3,6,6)}
-  const veh=[['ex',E.x,E.z,E.hd,4.4,3.0,'#e7a21a'],['ld',L.x,L.z,L.thr,7.5,2.6,'#f0b429'],['tr',T.x,T.z,T.hd,7.8,2.8,'#3c6e8f'],['dz',D.x,D.z,D.hd,5.4,3.9,'#c98a12']];
+  const veh=[['ex',E.x,E.z,E.hd,4.4,3.0,VCOL.ex],['ld',L.x,L.z,L.thr,7.5,2.6,VCOL.ld],['tr',T.x,T.z,T.hd,7.8,2.8,VCOL.tr],['dz',D.x,D.z,D.hd,5.4,3.9,VCOL.dz]];
   for(const [v,x,z,hd,l,w,col] of veh){g.save();g.translate(px(x),pz(z));g.rotate(-hd);g.fillStyle=col;g.strokeStyle=v===SBV?'#fff':'#222';g.lineWidth=v===SBV?2.5:1;
     g.fillRect(-l*ppm/2,-w*ppm/2,l*ppm,w*ppm);g.strokeRect(-l*ppm/2,-w*ppm/2,l*ppm,w*ppm);g.fillStyle='#222';g.beginPath();g.moveTo(l*ppm/2+5,0);g.lineTo(l*ppm/2-1,-4);g.lineTo(l*ppm/2-1,4);g.fill();g.restore();
     g.font='bold 12px sans-serif';g.fillStyle='#111';g.fillText(VNAME[v],px(x)+10,pz(z)-10)}
@@ -1768,7 +1771,7 @@ function mpOpen(){if(!sbOn||state!=='run'){toast('เล่นหลายคน
   if(!$('mpName').value)$('mpName').value=store.get('loaderMpName','')||who||'';if(!mpLive())paused=true;mpUi();sbBar()}
 function mpClose(){$('mpBox').hidden=true;paused=false}
 function mpLink(){return(/^https?:/.test(location.protocol)?location.origin+location.pathname:MP_WEB)+'?room='+MP.code}
-function mpUi(){const inRoom=!!MP.role;$('mpIdle').hidden=inRoom||!!MP.peer;$('mpRoom').hidden=!inRoom;
+function mpUi(){const inRoom=!!MP.role;$('machSub').textContent=sbOn&&inRoom?'คุณ · '+mpMyName():'';$('mpIdle').hidden=inRoom||!!MP.peer;$('mpRoom').hidden=!inRoom;
   if(inRoom){$('mpCodeBig').textContent=MP.code;$('mpLink').value=mpLink();
     $('mpList').replaceChildren(...MP.list.map(p=>{const li=document.createElement('li'),a=document.createElement('span'),b=document.createElement('small');
       a.textContent=p.name+(p.id===MP.me?' (คุณ)':'')+(p.id==='host'?' · เจ้าของห้อง':'');b.textContent=p.v?'ขับ'+VNAME[p.v]:'';li.append(a,b);return li}));
@@ -1894,6 +1897,7 @@ const fmt=s=>{s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStar
 let hudT=0;
 function setupHud(){$('mTag').textContent=lv.n+' · '+lv.name;$('mTask').innerHTML=lv.task;lv.labels.forEach((t,i)=>{$('s'+i+'l').textContent=t});
   const ex=isEx(),vt=vType(),LB={ex:['ปลายบุ้งกี๋','บูม','บุ้งกี๋','แขน','ในบุ้งกี๋'],ld:['สูงบุ้งกี๋','บูม','บุ้งกี๋','หักเลี้ยว','ในบุ้งกี๋'],tr:['กระบะ','ลาดหน้า-หลัง','เอียงข้าง','เลี้ยว','บนรถ'],dz:['ใบมีด','ลาดหน้า-หลัง','เอียงข้าง','ดันดิน','—'] }[vt];
+  $('machN').textContent=VNAME[vt];$('machSw').style.background=VCOL[vt];$('machSub').textContent=sbOn&&MP.role?'คุณ · '+mpMyName():'';
   $('glBh').textContent=LB[0];$('glBoom').textContent=LB[1];$('glBuck').textContent=LB[2];$('glArt').textContent=LB[3];$('glInb').textContent=LB[4];
   $('bhSub').textContent=sbOn?'':truckOn?'ขอบกระบะ '+RIM.toFixed(1):PT?'เป้าลึก −'+PT.d.toFixed(1):'';
   $('lstick').querySelector('.cap').textContent=ex?'แขน · หมุนป้อม':'ขับ · เลี้ยว';
