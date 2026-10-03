@@ -2089,7 +2089,8 @@ reset(lvId,false);
 let acc=0,last=performance.now(),blink=0,frameN=0;
 function frame(t){const rdt=(t-last)/1000;last=t;const dt=clamp(rdt,0,0.05);acc+=dt;let n=0;
   if(!paused||mpLive()){while(acc>=FDT&&n<3){step(FDT);acc-=FDT;n++}if(n===3)acc=0}else acc=0;
-  if(MP.role)mpTick(Math.min(rdt,1));drawSoil();   // network timers run on real timeupdCam(dt,false);hud(dt);monitor(rdt);SND.tick(dt);if(sbOn)sbFrame(dt);
+  if(MP.role)mpTick(Math.min(rdt,1));   // network timers run on real time
+  drawSoil();updCam(dt,false);hud(dt);monitor(rdt);SND.tick(dt);if(sbOn)sbFrame(dt);
   blink+=dt;beacon.material.emissiveIntensity=(Math.sin(blink*9)>0)?1.4:0.1;
   terrSync();frameN++;renderer.shadowMap.needsUpdate=q>=2||(frameN&1)===0;   // low tiers: shadows every other frame
   renderer.render(scene,camera);requestAnimationFrame(frame)}
