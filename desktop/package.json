@@ -1,7 +1,7 @@
 {
   "name": "loader-sim-desktop",
   "productName": "LoaderSim",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "ลานฝึกรถตัก · Wheel Loader Training Sim (desktop build)",
   "author": "PETSBOX SUPPLY",
   "license": "UNLICENSED",
@@ -19,6 +19,7 @@
     "@fontsource/jetbrains-mono": "5.3.0",
     "electron": "44.4.5",
     "electron-builder": "26.15.3",
+    "peerjs": "1.5.4",
     "three": "0.128.0"
   },
   "build": {
