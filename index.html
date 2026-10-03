@@ -100,6 +100,12 @@ body.sb.mini #mTag::after{content:' ▾'}body.sb.mini #mission>*:not(#mTag):not(
 #sbVeh{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:8px}#sbVeh .btn{min-width:0;padding:6px 2px;font-size:12.5px;letter-spacing:0;white-space:nowrap;overflow:hidden;text-align:center}#sbVeh kbd{margin-left:2px;font-size:10px}
 #sbVeh .btn.on,#sbTools .btn.on,#bToolsBtn.on{border-color:var(--hazard);color:var(--hazard)}
 #sbTools{display:flex;flex-direction:column;gap:6px;padding-left:10px;border-left:2px solid var(--hazard)}#sbTools[hidden]{display:none}
+#sbVeh .btn.taken{opacity:.5;border-style:dashed;cursor:not-allowed}
+#mpBadge{display:block;margin-top:6px;padding:4px 8px;font:600 12px var(--mono);color:var(--ok);background:none;border:1px solid rgba(255,255,255,.14);border-radius:4px;cursor:pointer;text-align:left;width:100%}#mpBadge[hidden]{display:none}#mpBadge.bad{color:var(--hazard)}
+#mpCodeBig{font:700 56px/1 var(--mono);letter-spacing:.18em;color:var(--hazard);margin:2px 0 10px}
+#mpList{list-style:none;margin:10px 0;padding:0;display:grid;gap:4px}#mpList li{background:#1f2124;border-radius:4px;padding:6px 10px;font-size:14px;display:flex;justify-content:space-between;gap:8px}#mpList li small{color:#a9a597}
+#mpStat{font-size:13px;color:#d9d5ca;min-height:1.2em;margin:8px 0 4px}
+#mpTags{position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden}#mpTags div{position:absolute;transform:translate(-50%,-100%);padding:2px 8px;border-radius:4px;background:rgba(22,24,26,.72);color:#fff;font:600 13px var(--body);white-space:nowrap;border-bottom:2px solid var(--hazard)}
 #prsBar{background:var(--ok);transition:width .08s}#prsBar.hi{background:var(--hazard)}#prsBar.max{background:var(--warn);animation:flick .12s steps(2) infinite}#prs.max{color:var(--warn)}
 @keyframes flick{50%{opacity:.4}}
 .card.wide{width:min(780px,100%)}
@@ -202,6 +208,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
   </div>
   <div id="mHint"></div>
   <div id="sbVeh" hidden><button class="btn" data-v="ex" type="button">ขุด<kbd>1</kbd></button><button class="btn" data-v="ld" type="button">ตัก<kbd>2</kbd></button><button class="btn" data-v="tr" type="button">บรรทุก<kbd>3</kbd></button><button class="btn" data-v="dz" type="button">ไถ<kbd>4</kbd></button></div>
+  <button id="mpBadge" type="button" hidden></button>
 </div>
 
 <div class="hud" id="tools">
@@ -211,7 +218,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
   <button class="btn" id="bMenu" type="button">เลือกด่าน<kbd>M</kbd></button>
   <button class="btn sbOnly" id="bMap" type="button" hidden>ภาพรวม<kbd>G</kbd></button>
   <button class="btn sbOnly" id="bToolsBtn" type="button" hidden aria-expanded="false">เครื่องมือ ▾</button>
-  <div id="sbTools" hidden><button class="btn" id="bTree" type="button">ปลูกต้นไม้<kbd>T</kbd></button><button class="btn" id="bCut" type="button">เอาต้นไม้ออก<kbd>X</kbd></button><button class="btn" id="bWater" type="button">เปิดน้ำ<kbd>O</kbd></button><button class="btn" id="bDrain" type="button" hidden>สูบน้ำออก<kbd>P</kbd></button><button class="btn" id="bRight" type="button">ตั้งรถใหม่<kbd>R</kbd></button></div>
+  <div id="sbTools" hidden><button class="btn" id="bTree" type="button">ปลูกต้นไม้<kbd>T</kbd></button><button class="btn" id="bCut" type="button">เอาต้นไม้ออก<kbd>X</kbd></button><button class="btn" id="bWater" type="button">เปิดน้ำ<kbd>O</kbd></button><button class="btn" id="bDrain" type="button" hidden>สูบน้ำออก<kbd>P</kbd></button><button class="btn" id="bRight" type="button">ตั้งรถใหม่<kbd>R</kbd></button><button class="btn" id="bMp" type="button">เล่นหลายคน<kbd>N</kbd></button></div>
   <button class="btn" id="bSnd" type="button">เสียง: เปิด<kbd>V</kbd></button>
   <button class="btn" id="bSubmit" type="button" hidden style="border-color:var(--ok)">ส่งงาน<kbd>⏎</kbd></button>
 </div>
@@ -320,6 +327,27 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
   </div>
 </div>
 
+<div class="overlay" id="mpBox" hidden>
+  <div class="card">
+    <div class="lbl">โหมดอิสระ · เล่นหลายคน (สูงสุด 4 คน · 1 คนต่อ 1 คัน)</div>
+    <h1>เล่นด้วยกัน</h1>
+    <div class="row"><label class="lbl" for="mpName">ชื่อ</label><input id="mpName" class="name" maxlength="20" placeholder="ชื่อที่เพื่อนเห็น" autocomplete="off" spellcheck="false"></div>
+    <div id="mpIdle">
+      <p>คนหนึ่งกด “สร้างห้อง” แล้วส่งรหัสหรือลิงก์ให้เพื่อน เพื่อนใส่รหัสหรือเปิดลิงก์ แล้วจะได้ขับรถอีกคันในไซต์เดียวกัน เครื่องของคนสร้างห้องเป็นตัวคำนวณดิน น้ำ และต้นไม้ ต้องต่ออินเทอร์เน็ตทุกเครื่อง</p>
+      <div class="row"><button class="go sm" id="bMpHost" type="button">สร้างห้อง</button></div>
+      <div class="row"><input id="mpCode" class="name" maxlength="4" placeholder="รหัสห้อง 4 ตัว" autocomplete="off" spellcheck="false" style="text-transform:uppercase;max-width:180px"><button class="go sec" id="bMpJoin" type="button">เข้าห้อง</button></div>
+    </div>
+    <div id="mpRoom" hidden>
+      <div class="lbl">รหัสห้อง</div><div id="mpCodeBig"></div>
+      <div class="row" id="mpShare"><input id="mpLink" class="name" readonly><button class="go sec" id="bMpCopy" type="button">คัดลอกลิงก์</button></div>
+      <ul id="mpList"></ul>
+      <div class="row"><button class="go sec" id="bMpLeave" type="button">ออกจากห้อง</button></div>
+    </div>
+    <p id="mpStat" role="status"></p>
+    <div class="row"><button class="go sm" id="bMpClose" type="button">กลับไปทำงาน</button></div>
+  </div>
+</div>
+<div id="mpTags" aria-hidden="true"></div>
 <div class="overlay" id="sbMap" hidden>
   <div class="card wide">
     <div class="lbl">โหมดอิสระ · ไซต์งาน 5 ไร่ (90 × 90 m)</div>
@@ -846,9 +874,9 @@ addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
   if(sbOn&&e.code==='Tab'){e.preventDefault();if(!K.Tab)sbSwitch(VORDER[(VORDER.indexOf(SBV)+1)%4])}
   if(!K[e.code]){if(e.code==='KeyC')cycleCam();if(e.code==='KeyV')SND.toggle();
-    if(sbOn){const d={Digit1:'ex',Digit2:'ld',Digit3:'tr',Digit4:'dz'}[e.code];if(d)sbSwitch(d);if(e.code==='KeyT')sbTool('tree','คลิก/แตะบนพื้นเพื่อปลูกต้นไม้');if(e.code==='KeyX')sbTool('cut','คลิก/แตะที่ต้นไม้เพื่อเอาออก');if(e.code==='KeyG'){if($('sbMap').hidden)sbOverview();else sbOverviewClose()}if(e.code==='KeyO')watToggle();if(e.code==='KeyP')watDrain()}
+    if(sbOn){const d={Digit1:'ex',Digit2:'ld',Digit3:'tr',Digit4:'dz'}[e.code];if(d)sbSwitch(d);if(e.code==='KeyT')sbTool('tree','คลิก/แตะบนพื้นเพื่อปลูกต้นไม้');if(e.code==='KeyX')sbTool('cut','คลิก/แตะที่ต้นไม้เพื่อเอาออก');if(e.code==='KeyG'){if($('sbMap').hidden)sbOverview();else sbOverviewClose()}if(e.code==='KeyO')watToggle();if(e.code==='KeyP')watDrain();if(e.code==='KeyN')mpOpen()}
     if(e.code==='KeyR'&&sbOn&&state==='run')sbRight();else if(e.code==='KeyR'&&(state==='run'||state==='done'))reset(lvId,true);if(e.code==='KeyH')showHelp();
-    if(e.code==='KeyM')showMenu();if(e.code==='Enter'&&state==='run'&&!paused&&lv.canSubmit&&lv.canSubmit())finish(true);if(e.code==='Escape'){if(!$('sbMap').hidden)sbOverviewClose();else if(!$('help').hidden)resume();else if(!$('hist').hidden)closeHist();else if(!$('ready').hidden)$('ready').hidden=true}}
+    if(e.code==='KeyM')showMenu();if(e.code==='Enter'&&state==='run'&&!paused&&lv.canSubmit&&lv.canSubmit())finish(true);if(e.code==='Escape'){if(!$('mpBox').hidden)mpClose();else if(!$('sbMap').hidden)sbOverviewClose();else if(!$('help').hidden)resume();else if(!$('hist').hidden)closeHist();else if(!$('ready').hidden)$('ready').hidden=true}}
   K[e.code]=true});
 addEventListener('keyup',e=>{K[e.code]=false});
 addEventListener('blur',()=>{for(const k in K)K[k]=false});
@@ -1305,7 +1333,7 @@ ex_slope:{id:'ex_slope',machine:'ex',n:'รถขุด 6',name:'ขุดบน
   key:r=>num(r.tip)?'พลิกคว่ำ':`ขุด ${r.dug??0}% · เสถียรต่ำสุด ${r.minst??0}% · เตือน ${r.warn??0}`},
 
 sandbox:{id:'sandbox',sandbox:true,machine:'ex',n:'โหมดอิสระ',name:'ไซต์งาน 5 ไร่',limit:Infinity,pile:false,truck:true,pit:'sb',start:{x:0,z:0,hd:Math.PI/2},grades:[1,1,1],
-  brief:'พื้นที่ 90 × 90 m (5 ไร่) ขุดได้ทุกจุดลึกถึง 20 m มีรถขุด รถตัก รถบรรทุก และรถไถในฉากเดียว สลับขับได้ ปลูกต้นไม้ และเปิดน้ำเข้าบ่อ ไม่จับเวลา ไม่คิดคะแนน',
+  brief:'พื้นที่ 90 × 90 m (5 ไร่) ขุดได้ทุกจุดลึกถึง 20 m มีรถขุด รถตัก รถบรรทุก และรถไถในฉากเดียว สลับขับได้ ปลูกต้นไม้ และเปิดน้ำเข้าบ่อ ไม่จับเวลา ไม่คิดคะแนน · เล่นด้วยกันได้สูงสุด 4 คน (เครื่องมือ → เล่นหลายคน)',
   task:'ไซต์งานอิสระ 5 ไร่: ขุด ขนดินไปทิ้ง เกลี่ยดิน ปลูกต้นไม้ และเปิดน้ำเข้าบ่อได้ตามต้องการ',
   tip:'เทคนิค: ขุดลึกต้องทำเป็นขั้นบันไดหรือทางลาดให้รถลงไปได้ ผนังดินที่ชันเกินจะพังลงมา ใช้รถขุดตักใส่รถบรรทุก (กด 3 เพื่อขับรถบรรทุกไปเท) แล้วใช้รถไถ (กด 4) ลดใบมีดลงเกลี่ยกองดินให้เรียบ',
   labels:['ลึกสุด','ดินบนรถ','น้ำในบ่อ'],
@@ -1415,7 +1443,7 @@ function sbSyncChunk(c){const {i0,k0,w,h}=c,g=c.m.geometry,P=g.attributes.positi
   g.attributes.position.needsUpdate=g.attributes.normal.needsUpdate=g.attributes.color.needsUpdate=true;c.dirty=false}
 // mark terrain around cell (i,k) as changed: chunks to redraw, the slump window, and the water surface
 const SLR={i0:1,i1:0,k0:1,k1:0};
-function sbTouch(i,k,r){const a0=Math.max(0,i-r-1),a1=Math.min(SB.nx-1,i+r+1),b0=Math.max(0,k-r-1),b1=Math.min(SB.nz-1,k+r+1);
+function sbTouch(i,k,r){const a0=Math.max(0,i-r-1),a1=Math.min(SB.nx-1,i+r+1),b0=Math.max(0,k-r-1),b1=Math.min(SB.nz-1,k+r+1);netTouch(a0,a1,b0,b1);
   for(let cz=Math.floor(b0/SBC);cz<=Math.min(SBCZ-1,Math.floor(b1/SBC));cz++)for(let cx=Math.floor(a0/SBC);cx<=Math.min(SBCX-1,Math.floor(a1/SBC));cx++)sbChunks[cz*SBCX+cx].dirty=true;
   if(SLR.i0>SLR.i1){SLR.i0=a0;SLR.i1=a1;SLR.k0=b0;SLR.k1=b1}else{SLR.i0=Math.min(SLR.i0,a0);SLR.i1=Math.max(SLR.i1,a1);SLR.k0=Math.min(SLR.k0,b0);SLR.k1=Math.max(SLR.k1,b1)}
   if(WAT.V>0)WAT.dirty=true}
@@ -1427,7 +1455,7 @@ function sbSlump(){if(SLR.i0>SLR.i1)return;const nx=SB.nx,T=SB.TH,Lo=SB.LSO,md=0
       if(Lo[n]>1e-4){const d=T[n]+Lo[n]-hm-md;if(d>0){mv=Math.min(Lo[n],d*0.2);if(mv>1e-5){Lo[n]-=mv;Lo[m]+=mv}else mv=0}}
       const ds=T[n]-hm-mdS;if(ds>0){const c=ds*0.08;T[n]-=c;Lo[m]+=c;mv+=c}
       if(mv>0){if(i<a0)a0=i;if(i>a1)a1=i;if(k<b0)b0=k;if(k>b1)b1=k}}}
-  SLR.i0=1;SLR.i1=0;if(a1>=0){sbTouch((a0+a1)>>1,(b0+b1)>>1,0);SLR.i0=Math.max(0,a0-2);SLR.i1=a1+2;SLR.k0=Math.max(0,b0-2);SLR.k1=b1+2;
+  SLR.i0=1;SLR.i1=0;if(a1>=0){sbTouch((a0+a1)>>1,(b0+b1)>>1,0);netTouch(a0,a1,b0,b1);SLR.i0=Math.max(0,a0-2);SLR.i1=a1+2;SLR.k0=Math.max(0,b0-2);SLR.k1=b1+2;
     for(let cz=Math.floor(SLR.k0/SBC);cz<=Math.min(SBCZ-1,Math.floor(SLR.k1/SBC));cz++)for(let cx=Math.floor(SLR.i0/SBC);cx<=Math.min(SBCX-1,Math.floor(SLR.i1/SBC));cx++)sbChunks[cz*SBCX+cx].dirty=true}}
 function sbSync(){for(const c of sbChunks)if(c.dirty)sbSyncChunk(c)}
 
@@ -1505,11 +1533,11 @@ function vehHit(p){if(truckOn&&(!sbOn||SBV!=='tr')&&hitsTruck(p))return 'truck';
 /* ---- trees ---- */
 const trees=[],treeG=new THREE.Group();sbG.add(treeG);
 const trunkGeo=new THREE.CylinderGeometry(0.12,0.2,2.4,7),leafGeo=new THREE.IcosahedronGeometry(1,0),mTrunk=M(0x6b4a2b,{roughness:1}),mLeaf=[0x3f7d34,0x4f8f3a,0x2f6b2e,0x5a9a40].map(c=>M(c,{roughness:.9,flatShading:true}));
-function plantTree(x,z){if(trees.length>=300){toast('ปลูกได้สูงสุด 300 ต้น');return}
+function plantTree(x,z,yaw,sc,net){if(MP.role==='guest'&&!net){mpCmd({c:'tree',x,z});return}if(trees.length>=300){toast('ปลูกได้สูงสุด 300 ต้น');return}MP.treeV++;
   const g=new THREE.Group(),tr=new THREE.Mesh(trunkGeo,mTrunk);tr.position.y=1.2;tr.castShadow=true;g.add(tr);
   for(const [lx,ly,lz,r] of [[0,2.7,0,1.35],[0.55,3.3,0.3,0.95],[-0.45,3.1,-0.4,1.05],[0.1,3.9,-0.1,0.75]]){const l=new THREE.Mesh(leafGeo,mLeaf[(Math.random()*4)|0]);l.position.set(lx,ly,lz);l.scale.setScalar(r*(0.85+Math.random()*0.3));l.castShadow=true;g.add(l)}
-  g.scale.setScalar(0.75+Math.random()*0.6);const yaw=Math.random()*6.28,y=hAt(x,z);g.position.set(x,y,z);g.rotation.y=yaw;treeG.add(g);
-  trees.push({x,z,g,y0:y,yaw,fall:0,dir:0})}
+  sc=sc||0.75+Math.random()*0.6;g.scale.setScalar(sc);if(yaw===undefined)yaw=Math.random()*6.28;const y=hAt(x,z);g.position.set(x,y,z);g.rotation.y=yaw;treeG.add(g);
+  trees.push({x,z,g,y0:y,yaw,sc,fall:0,dir:0})}
 const _trq=new THREE.Quaternion(),_trq2=new THREE.Quaternion(),_tax=new V3();
 function sbTrees(dt){for(const t of trees){const y=hAt(t.x,t.z);t.g.position.y=y;
   if(!t.fall&&t.y0-y>0.8){t.fall=0.001;t.dir=Math.random()*6.28}   // ground dug out from under it
@@ -1544,15 +1572,15 @@ function watBuild(){if(watMesh){sbG.remove(watMesh);watMesh.geometry.dispose();w
   for(let k=0;k<h-1;k++)for(let i=0;i<w-1;i++){const a=k*w+i;idx.push(a,a+w,a+1,a+1,a+w,a+w+1)}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setIndex(w*h>65535?new THREE.Uint32BufferAttribute(idx,1):new THREE.Uint16BufferAttribute(idx,1));g.computeVertexNormals();
   watMesh=new THREE.Mesh(g,watMat);watMesh.renderOrder=2;sbG.add(watMesh)}
-function watStart(x,z){const i=clamp(Math.round((x-SB.x0)/SB.cs),1,SB.nx-2),k=clamp(Math.round((z-SB.z0)/SB.cs),1,SB.nz-2);
+function watStart(x,z){if(MP.role==='guest'){mpCmd({c:'water',x,z});return}const i=clamp(Math.round((x-SB.x0)/SB.cs),1,SB.nx-2),k=clamp(Math.round((z-SB.z0)/SB.cs),1,SB.nz-2);
   WAT.inlet=k*SB.nx+i;WAT.on=true;WAT.drain=false;WAT.full=false;WAT.dirty=true;pipeG.position.set(x-0.95,hAt(x,z),z);pipeG.visible=true;toast('เปิดน้ำเข้าบ่อ',true);sbBar()}
-function watToggle(){if(WAT.on){WAT.on=false;toast('ปิดน้ำ',true)}else if(WAT.inlet>=0&&!WAT.full){WAT.on=true;WAT.drain=false;toast('เปิดน้ำเข้าบ่อ',true)}else{SBTOOL=SBTOOL==='water'?null:'water';if(SBTOOL)toast('คลิก/แตะในหลุมหรือบ่อ เพื่อวางท่อน้ำ',true)}sbBar()}
-function watDrain(){WAT.drain=!WAT.drain;if(WAT.drain){WAT.on=false;WAT.full=false;toast('สูบน้ำออก',true)}sbBar()}
+function watToggle(){if(MP.role==='guest'&&(WAT.on||WAT.inlet>=0&&!WAT.full)){mpCmd({c:'wtog'});return}if(WAT.on){WAT.on=false;toast('ปิดน้ำ',true)}else if(WAT.inlet>=0&&!WAT.full){WAT.on=true;WAT.drain=false;toast('เปิดน้ำเข้าบ่อ',true)}else{SBTOOL=SBTOOL==='water'?null:'water';if(SBTOOL)toast('คลิก/แตะในหลุมหรือบ่อ เพื่อวางท่อน้ำ',true)}sbBar()}
+function watDrain(){if(MP.role==='guest'){mpCmd({c:'drain'});return}WAT.drain=!WAT.drain;if(WAT.drain){WAT.on=false;WAT.full=false;toast('สูบน้ำออก',true)}sbBar()}
 
 /* ---- switching, stepping, frame work ---- */
-function sbSwitch(v){if(!sbOn||v===SBV||state!=='run')return;E.v=0;L.v=0;T.v=0;D.v=0;SBV=v;cutAcc=0;vbInv();setupHud();updCam(0,true);toast('ขับ'+VNAME[v],true);sbBar()}
-function sbRight(){if(SBV==='ex'){Object.assign(TIP,{a:0,w:0,edge:null,fall:false,dy:0,vy:0});G.tipMsg=0;exApplyT()}else if(SBV==='tr'){T.bed=0;truckPose()}else if(SBV==='dz')dozerPose();else applyT();toast('ตั้ง'+VNAME[SBV]+'ใหม่',true)}
-function sbStep(dt){if(WAT.on){WAT.V+=WQ*dt;WAT.dirty=true}if(WAT.drain){WAT.V=Math.max(0,WAT.V-WD*dt);WAT.dirty=true;if(WAT.V===0){WAT.drain=false;sbBar()}}
+function sbSwitch(v,net){if(!sbOn||v===SBV||state!=='run')return;if(!net&&mpSwitch(v))return;VS[SBV].v=0;SBV=v;cutAcc=0;vbInv();setupHud();updCam(0,true);toast('ขับ'+VNAME[v],true);sbBar()}
+function sbRight(){if(MP.role==='guest'){mpCmd({c:'right'});return}if(SBV==='ex'){Object.assign(TIP,{a:0,w:0,edge:null,fall:false,dy:0,vy:0});G.tipMsg=0;exApplyT()}else if(SBV==='tr'){T.bed=0;truckPose()}else if(SBV==='dz')dozerPose();else applyT();toast('ตั้ง'+VNAME[SBV]+'ใหม่',true)}
+function sbStep(dt){if(MP.role==='guest'){}else if(WAT.on){WAT.V+=WQ*dt;WAT.dirty=true}if(WAT.drain&&MP.role!=='guest'){WAT.V=Math.max(0,WAT.V-WD*dt);WAT.dirty=true;if(WAT.V===0){WAT.drain=false;sbBar()}}
   sbTrees(dt);if((sbMinT-=dt)<0){sbMinT=1;let m=0;const T0=SB.TH,Lo=SB.LSO;for(let n=0;n<T0.length;n++){const h=T0[n]+Lo[n];if(h<m)m=h}sbMinH=m}}
 function sbFrame(dt){const p=vPose();sun.position.set(p.x+22,p.y+34,p.z+14);sun.target.position.set(p.x,p.y,p.z);sun.target.updateMatrixWorld();
   scene.fog.far=camMode===3?900:q>=2?330:220;scene.fog.near=camMode===3?400:q>=2?90:60;
@@ -1567,14 +1595,14 @@ function sbEnter(){sbBuild();sbGen();for(const c of sbChunks)c.dirty=true;sbSync
   N=0;soil.count=0;cutAcc=0;spawnK=0;SBV='ex';
   Object.assign(E,{x:0,z:0,hd:Math.PI/2,sw:0,bm:35*DEG,ar:-100*DEG,bk:-60*DEG,v:0});exApplyT();
   Object.assign(L,{x:-14,z:8,thr:Math.PI/2,phi:0,v:0,beta:-14*DEG,alpha:0});applyT();updCyl();
-  Object.assign(T,{x:9,z:4,hd:Math.PI/2,v:0,st:0,bed:0});truckPose();Object.assign(D,{x:-8,z:-15,hd:Math.PI/2,v:0,blade:0.3,cut:0});dozerPose();vbInv();sbBar()}
-function sbLeave(){if(camMode===3)camMode=0;$('sbMap').hidden=true;for(const o of arenaHidden)o.visible=true;arenaHidden=[];sbG.visible=false;dozerG.visible=false;BOUND=35;scene.fog.near=70;scene.fog.far=160;camera.far=400;camera.updateProjectionMatrix();
+  Object.assign(T,{x:9,z:4,hd:Math.PI/2,v:0,st:0,bed:0});truckPose();Object.assign(D,{x:-8,z:-15,hd:Math.PI/2,v:0,blade:0.3,cut:0});dozerPose();vbInv();sbBar();if(MP.role==='host')mpResync()}
+function sbLeave(){if(MP.role)mpLeave();if(camMode===3)camMode=0;$('sbMap').hidden=true;for(const o of arenaHidden)o.visible=true;arenaHidden=[];sbG.visible=false;dozerG.visible=false;BOUND=35;scene.fog.near=70;scene.fog.far=160;camera.far=400;camera.updateProjectionMatrix();
   sun.position.set(22,34,14);sun.target.position.set(0,0,0);sun.target.updateMatrixWorld();T.bed=0;SBTOOL=null}
-function sbBar(){document.body.classList.toggle('sb',sbOn);$('sbVeh').hidden=!sbOn;$('bMap').hidden=$('bToolsBtn').hidden=!sbOn;if(!sbOn){$('sbTools').hidden=true;document.body.classList.remove('mini');return}
+function sbBar(){document.body.classList.toggle('sb',sbOn);$('sbVeh').hidden=!sbOn;$('bMap').hidden=$('bToolsBtn').hidden=!sbOn;if(!sbOn){$('sbTools').hidden=true;document.body.classList.remove('mini');mpBar();return}
   for(const e of $('sbVeh').querySelectorAll('[data-v]'))e.classList.toggle('on',e.dataset.v===SBV);
   const tn={tree:'ปลูกต้นไม้',cut:'เอาต้นไม้ออก',water:'วางท่อน้ำ'}[SBTOOL];$('bToolsBtn').textContent=tn?'✓ '+tn:(WAT.on?'เครื่องมือ · น้ำไหล ▾':'เครื่องมือ ▾');$('bToolsBtn').classList.toggle('on',!!tn||WAT.on);
   $('bTree').classList.toggle('on',SBTOOL==='tree');$('bCut').classList.toggle('on',SBTOOL==='cut');$('bWater').classList.toggle('on',WAT.on||SBTOOL==='water');$('bWater').firstChild.textContent=WAT.on?'ปิดน้ำ':'เปิดน้ำ';
-  $('bDrain').hidden=!(WAT.V>0||WAT.drain);$('bDrain').firstChild.textContent=WAT.drain?'หยุดสูบ':'สูบน้ำออก';cv.style.cursor=SBTOOL?'crosshair':''}
+  $('bDrain').hidden=!(WAT.V>0||WAT.drain);$('bDrain').firstChild.textContent=WAT.drain?'หยุดสูบ':'สูบน้ำออก';cv.style.cursor=SBTOOL?'crosshair':'';mpBar()}
 const _ray=new THREE.Raycaster(),_ndc=new THREE.Vector2();
 function sbPick(e){const r=cv.getBoundingClientRect();_ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);_ray.setFromCamera(_ndc,camera);
   if(SBTOOL==='cut'){const h=_ray.intersectObjects([treeG,...sbChunks.map(c=>c.m)],true)[0];if(!h)return;let t=null;
@@ -1583,7 +1611,7 @@ function sbPick(e){const r=cv.getBoundingClientRect();_ndc.set((e.clientX-r.left
     if(t)removeTree(t);else toast('ไม่มีต้นไม้ตรงนี้',true);return}
   const hit=_ray.intersectObjects(sbChunks.map(c=>c.m),false)[0];if(!hit)return;const {x,z}=hit.point;
   if(SBTOOL==='tree')plantTree(x,z);else if(SBTOOL==='water'){SBTOOL=null;watStart(x,z)}}
-function removeTree(t){treeG.remove(t.g);trees.splice(trees.indexOf(t),1);toast('เอาต้นไม้ออกแล้ว · เหลือ '+trees.length+' ต้น',true)}
+function removeTree(t){if(MP.role==='guest'){mpCmd({c:'cut',x:t.x,z:t.z});return}MP.treeV++;treeG.remove(t.g);trees.splice(trees.indexOf(t),1);toast('เอาต้นไม้ออกแล้ว · เหลือ '+trees.length+' ต้น',true)}
 function sbTool(t,msg){SBTOOL=SBTOOL===t?null:t;if(SBTOOL)toast(msg,true);sbBar()}
 /* ---- project overview: plan map of cut (blue, by depth) and fill (brown) against the starting ground, water, trees, machines, and totals ---- */
 function sbOverview(){if(!sbOn||state!=='run')return;paused=true;$('sbMap').hidden=false;SBTOOL=null;sbBar();
@@ -1611,6 +1639,144 @@ function sbOverview(){if(!sbOn||state!=='run')return;paused=true;$('sbMap').hidd
     ['น้ำในบ่อ',WAT.V>0.5?Math.round(WAT.V).toLocaleString():'0','m³'+(WAT.n?' · ผิวน้ำ '+(wetA/1600).toFixed(2)+' ไร่':'')],['ต้นไม้',standing,'ต้น'+(trees.length>standing?' · ล้ม '+(trees.length-standing):'')],['ดินบนรถบรรทุก',(inTruck*TPP).toFixed(1),'t'],['เวลาทำงาน',fmt(elapsed),'']];
   $('mKpi').replaceChildren(...kp.map(([l,v,u])=>{const d=document.createElement('div');d.innerHTML='<div class="lbl"></div><div class="v"><span></span><small></small></div>';d.querySelector('.lbl').textContent=l;d.querySelector('span').textContent=v;d.querySelector('small').textContent=u;return d}))}
 function sbOverviewClose(){$('sbMap').hidden=true;paused=false}
+/* ---- multiplayer (sandbox, up to 4 players, one machine each): the room host runs the whole site; guests send their levers and get the
+   site back (machines + grains 20×/s, changed terrain tiles 10×/s, trees and water when they change). WebRTC data channel via PeerJS, loaded on demand ---- */
+const MP_LIB='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js',MP_PFX='petsbox-loadersim-',MP_ABC='ABCDEFGHJKMNPQRSTUVWXYZ23456789',MP_WEB='https://thanapatkong-spec.github.io/loader-sim/';
+const MP={role:null,code:'',peer:null,conns:[],host:null,players:[],list:[],me:'host',quiet:false,lastT:null,rx:null,lastRx:0,treeV:0,tSt:0,tTr:0,tTree:0,tWat:0,tIn:0,tBar:0,sigTree:'',sigWat:'',sigIn:''};
+const VS={ex:E,ld:L,tr:T,dz:D},ZI={thr:0,steer:0,boom:0,buck:0,brake:true,arm:0,swing:0,travel:0,turn:0},IK=['thr','steer','boom','buck','brake','arm','swing','travel','turn'];
+const NF=[[E,['x','z','hd','sw','bm','ar','bk','v']],[L,['x','z','thr','phi','v','beta','alpha']],[T,['x','z','hd','v','st','bed']],[D,['x','z','hd','v','blade','cut']]],NANG=new Set(['hd','sw','thr']),TIPK=Object.keys(TIPE);
+// terrain goes out in 16×16-vertex tiles; sbTouch/sbSlump mark the tiles they change
+const NT=16,NTX=Math.ceil(SB.nx/NT),NTZ=Math.ceil(SB.nz/NT),ntDirty=new Uint8Array(NTX*NTZ);
+function netTouch(a0,a1,b0,b1){if(MP.role!=='host')return;for(let tz=Math.max(0,b0>>4);tz<=Math.min(NTZ-1,b1>>4);tz++)for(let tx=Math.max(0,a0>>4);tx<=Math.min(NTX-1,a1>>4);tx++)ntDirty[tz*NTX+tx]=1}
+const tileDims=t=>{const tx=t%NTX,tz=(t/NTX)|0,i0=tx*NT,k0=tz*NT;return[i0,k0,Math.min(NT,SB.nx-i0),Math.min(NT,SB.nz-k0)]};
+// tag 2 = TH+LSO, tag 3 = H0 (ground at the start); messages stay under ~45 kB
+function mpTiles(list,tag){const out=[],A=tag===2?[SB.TH,SB.LSO]:[SB.H0];let cur=[],sz=0;
+  const flush=()=>{if(!cur.length)return;let n=2;for(const t of cur){const d=tileDims(t);n+=1+d[2]*d[3]*A.length}const f=new Float32Array(n);f[0]=tag;f[1]=cur.length;let o=2;
+    for(const t of cur){const [i0,k0,w,h]=tileDims(t);f[o++]=t;for(const a of A)for(let k=0;k<h;k++){const r=(k0+k)*SB.nx+i0;f.set(a.subarray(r,r+w),o);o+=w}}out.push(f.buffer);cur=[];sz=0};
+  for(const t of list){cur.push(t);sz+=NT*NT*4*A.length;if(sz>40000)flush()}flush();return out}
+const mpAllTiles=()=>Array.from({length:NTX*NTZ},(_,i)=>i);
+function sbDirtyChunks(a0,a1,b0,b1){for(let cz=Math.max(0,Math.floor(b0/SBC));cz<=Math.min(SBCZ-1,Math.floor(b1/SBC));cz++)for(let cx=Math.max(0,Math.floor(a0/SBC));cx<=Math.min(SBCX-1,Math.floor(a1/SBC));cx++)sbChunks[cz*SBCX+cx].dirty=true}
+function mpApplyTiles(f){const tag=f[0],A=tag===2?[SB.TH,SB.LSO]:[SB.H0];let o=2;
+  for(let j=0;j<f[1];j++){const t=f[o++];if(!(t>=0&&t<NTX*NTZ))return;const [i0,k0,w,h]=tileDims(t);for(const a of A)for(let k=0;k<h;k++){const r=(k0+k)*SB.nx+i0;a.set(f.subarray(o,o+w),r);o+=w}
+    if(tag===2)sbDirtyChunks(i0-1,i0+w,k0-1,k0+h)}
+  if(tag===2&&WAT.V>0)WAT.dirty=true}
+// machines + grains: tag 1
+function mpState(){const H=2+33+4+1,f=new Float32Array(H+N*3);f[0]=1;f[1]=elapsed;let o=2;for(const [O,ks] of NF)for(const k of ks)f[o++]=O[k];
+  f[o++]=TIP.a;f[o++]=TIP.dy||0;f[o++]=TIP.edge?TIPK.indexOf(TIP.edge):-1;f[o++]=TIP.fall?1:0;f[o++]=N;for(let i=0;i<N;i++){f[o++]=px[i];f[o++]=py[i];f[o++]=pz[i]}return f.buffer}
+function mpApplyState(dt){const f=MP.rx;if(!f)return;const a=Math.min(1,dt*12);let o=2;elapsed=f[1];
+  for(const [O,ks] of NF)for(const k of ks){const t=f[o++];if(k==='v'||k==='cut'){O[k]=t;continue}const ang=NANG.has(k);let d=t-O[k];if(ang)d=Math.atan2(Math.sin(d),Math.cos(d));O[k]=Math.abs(d)>(ang?1:4)?t:O[k]+d*a}
+  TIP.a=f[o++];TIP.dy=f[o++];const ei=f[o++];TIP.edge=ei>=0?TIPK[ei]:null;TIP.fall=f[o++]>0;
+  const n=Math.min(MAXN,f[o++]|0),b=Math.min(1,dt*20);
+  if(n!==N){N=n;for(let i=0;i<N;i++){px[i]=qx[i]=f[o+i*3];py[i]=qy[i]=f[o+i*3+1];pz[i]=qz[i]=f[o+i*3+2]}}
+  else for(let i=0;i<N;i++){qx[i]=px[i];qy[i]=py[i];qz[i]=pz[i];px[i]+=(f[o+i*3]-px[i])*b;py[i]+=(f[o+i*3+1]-py[i])*b;pz[i]+=(f[o+i*3+2]-pz[i])*b}
+  exApplyT();applyT();updCyl();truckPose();dozerPose()}
+const r2=v=>Math.round(v*100)/100;
+const mpTreeMsg=()=>({t:'tr',a:trees.map(t=>[r2(t.x),r2(t.z),r2(t.yaw),r2(t.sc||1),t.fall?1:0,r2(t.dir)])});
+const mpWatMsg=()=>({t:'wa',V:Math.round(WAT.V*10)/10,on:WAT.on,dr:WAT.drain,inl:WAT.inlet,full:WAT.full});
+function mpApplyTrees(a){if(!Array.isArray(a))return;const same=a.length===trees.length&&a.every((r,i)=>Math.abs(r[0]-trees[i].x)<0.05&&Math.abs(r[1]-trees[i].z)<0.05);
+  if(!same){for(const t of trees)treeG.remove(t.g);trees.length=0;for(const r of a){plantTree(+r[0],+r[1],+r[2],+r[3],true);if(r[4]){const t=trees[trees.length-1];t.fall=1.49;t.dir=+r[5]}}}
+  else a.forEach((r,i)=>{const t=trees[i];if(r[4]&&!t.fall){t.fall=0.001;t.dir=+r[5]}})}
+function mpApplyWat(m){const ch=m.V!==WAT.V||m.inl!==WAT.inlet;WAT.V=+m.V||0;WAT.on=!!m.on;WAT.drain=!!m.dr;WAT.full=!!m.full;
+  if(m.inl!==WAT.inlet){WAT.inlet=m.inl|0;if(WAT.inlet>=0){const i=WAT.inlet%SB.nx,k=(WAT.inlet/SB.nx)|0,x=SB.x0+i*SB.cs,z=SB.z0+k*SB.cs;pipeG.position.set(x-0.95,hAt(x,z),z);pipeG.visible=true}else pipeG.visible=false}
+  if(ch)WAT.dirty=true;sbBar()}
+// ---- host: step every guest's machine with that guest's levers (bucket bookkeeping swapped in per machine)
+function mpStepRemote(dt){if(!sbOn)return;let any=false;
+  for(const p of MP.players){if(p.id==='host'||!p.v||p.v===SBV)continue;any=true;const sv=SBV,acc=cutAcc,cl=cutLast,ib=inBucket;
+    SBV=p.v;cutAcc=p.acc||0;vbInv();countSoil();MP.quiet=true;try{stepV(p.v,dt,p.inp||ZI)}finally{MP.quiet=false}p.acc=cutAcc;SBV=sv;cutAcc=acc;cutLast=cl;inBucket=ib}
+  if(any){vbInv();countSoil()}}
+// ---- guest: send levers, show what the host sends
+function mpGuestStep(dt){const run=state==='run',inp=run?readInput():ZI;lastInp=inp;const vt=vType(),j0=vt==='ex'?[E.bm,E.ar,E.bk,E.sw]:vt==='tr'?[T.bed,0,0,0]:vt==='dz'?[D.blade,0,0,0]:[L.beta,L.alpha,0,0];
+  MP.tIn-=dt;const iv=IK.map(k=>+inp[k]),sig=iv.map(v=>v.toFixed(2)).join();if(MP.host&&MP.tIn<=0.2&&(sig!==MP.sigIn||MP.tIn<=0)){mpSend(MP.host,{t:'in',i:iv});MP.sigIn=sig;MP.tIn=0.25+0.033}
+  mpApplyState(dt);hydPress(dt,inp,j0);countSoil();if(sbOn&&run)sbStep(dt)}
+function mpTick(dt){mpTags();MP.tBar-=dt;if(MP.tBar<=0){MP.tBar=0.5;mpBar()}if(MP.role!=='host'||!MP.conns.length)return;const ok=MP.conns.filter(c=>c.ok);
+  MP.tSt-=dt;if(MP.tSt<=0){MP.tSt=0.05;const b=mpState();for(const c of ok)if(!c.dataChannel||c.dataChannel.bufferedAmount<262144)mpRaw(c,b)}
+  MP.tTr-=dt;if(MP.tTr<=0){MP.tTr=0.1;const l=[];for(let t=0;t<ntDirty.length;t++)if(ntDirty[t]){l.push(t);ntDirty[t]=0}if(l.length)for(const b of mpTiles(l,2))for(const c of ok)mpRaw(c,b)}
+  MP.tTree-=dt;if(MP.tTree<=0){MP.tTree=0.25;const sig=MP.treeV+':'+trees.filter(t=>t.fall).length;if(sig!==MP.sigTree){MP.sigTree=sig;mpAll(mpTreeMsg())}}
+  MP.tWat-=dt;if(MP.tWat<=0){MP.tWat=0.25;const m=mpWatMsg(),sig=JSON.stringify(m);if(sig!==MP.sigWat){MP.sigWat=sig;mpAll(m)}}}
+const mpLive=()=>MP.role==='guest'||MP.role==='host'&&MP.conns.length>0;
+function mpSend(c,m){try{c.send(JSON.stringify(m))}catch(e){}}
+function mpRaw(c,b){try{c.send(b)}catch(e){}}
+function mpAll(m){const s=JSON.stringify(m);for(const c of MP.conns)if(c.ok)try{c.send(s)}catch(e){}}
+function mpCmd(m){if(MP.host)mpSend(MP.host,Object.assign({t:'cmd'},m))}
+const mpTaken=v=>MP.players.find(p=>p.id!=='host'&&p.v===v);
+const mpFree=order=>order.find(v=>v!==SBV&&!mpTaken(v));
+const mpCleanName=s=>String(s||'').replace(/[\u0000-\u001f]/g,'').trim().slice(0,20)||'เพื่อน';
+const mpMyName=()=>mpCleanName($('mpName').value||who||'ผู้เล่น');
+function mpSwitch(v){if(MP.role==='guest'){mpCmd({c:'sw',v});return true}
+  if(MP.role==='host'){const p=mpTaken(v);if(p){toast(p.name+' ขับ'+VNAME[v]+'อยู่');return true}MP.players[0].v=v;mpPlayers()}return false}
+function mpPlayers(){if(MP.role!=='host')return;MP.list=MP.players.map(p=>({id:p.id,name:p.name,v:p.v}));mpAll({t:'pl',a:MP.list});mpStat(MP.list.length>1?'':'ส่งรหัสหรือลิงก์ให้เพื่อน แล้วรอเพื่อนเข้าห้อง');mpUi()}
+function mpOnHost(c,d){if(typeof d!=='string'||d.length>2000)return;let m;try{m=JSON.parse(d)}catch(e){return}if(!m||typeof m!=='object')return;const p=MP.players.find(q=>q.id===c.peer);
+  if(m.t==='join'){if(p)return;const v=mpFree(['tr','ld','dz','ex']);if(!v){mpSend(c,{t:'full'});setTimeout(()=>c.close(),800);return}
+    const name=mpCleanName(m.name);MP.players.push({id:c.peer,name,v,inp:ZI,acc:0});mpSend(c,{t:'hi',v,code:MP.code});
+    for(const b of mpTiles(mpAllTiles(),3))mpRaw(c,b);for(const b of mpTiles(mpAllTiles(),2))mpRaw(c,b);mpSend(c,mpTreeMsg());mpSend(c,mpWatMsg());c.ok=true;mpPlayers();toast(name+' เข้าห้องแล้ว · ขับ'+VNAME[v],true);return}
+  if(!p)return;
+  if(m.t==='in'&&Array.isArray(m.i)){const o={};IK.forEach((k,j)=>{const v=+m.i[j];o[k]=k==='brake'?!!v:clamp(Number.isFinite(v)?v:0,-1,1)});p.inp=o;return}
+  if(m.t==='cmd')mpCmdHost(c,p,m)}
+function mpCmdHost(c,p,m){const x=+m.x,z=+m.z,ok=Number.isFinite(x)&&Number.isFinite(z)&&Math.abs(x)<=SB.x1&&Math.abs(z)<=SB.z1;MP.lastT=null;MP.quiet=true;
+  try{if(m.c==='sw'){const v=m.v;if(!VS[v]||v===p.v)return;if(v===SBV||mpTaken(v)){mpSend(c,{t:'msg',s:(v===SBV?MP.players[0].name:mpTaken(v).name)+' ขับ'+VNAME[v]+'อยู่'});return}
+      VS[p.v].v=0;p.v=v;p.acc=0;p.inp=ZI;mpSend(c,{t:'you',v});MP.quiet=false;mpPlayers();return}
+    if(m.c==='tree'&&ok)plantTree(x,z);
+    else if(m.c==='cut'&&ok){let bt=null,bd=1;for(const t of trees){const d=Math.hypot(t.x-x,t.z-z);if(d<bd){bd=d;bt=t}}if(bt)removeTree(bt)}
+    else if(m.c==='clear'){for(const t of trees)treeG.remove(t.g);trees.length=0;MP.treeV++}
+    else if(m.c==='water'&&ok)watStart(x,z);
+    else if(m.c==='wtog'&&(WAT.on||WAT.inlet>=0&&!WAT.full))watToggle();
+    else if(m.c==='drain')watDrain();
+    else if(m.c==='right'){const sv=SBV;SBV=p.v;try{sbRight()}finally{SBV=sv}}}
+  finally{MP.quiet=false}if(MP.lastT)mpSend(c,{t:'msg',s:MP.lastT[0],g:MP.lastT[1]})}
+function mpOnGuest(d){MP.lastRx=performance.now();if(ArrayBuffer.isView(d))d=d.buffer.slice(d.byteOffset,d.byteOffset+d.byteLength);
+  if(d instanceof ArrayBuffer){if(d.byteLength%4)return;const f=new Float32Array(d);if(MP.role!=='guest')return;if(f[0]===1)MP.rx=f;else if(f[0]===2||f[0]===3)mpApplyTiles(f);return}
+  if(typeof d!=='string')return;let m;try{m=JSON.parse(d)}catch(e){return}if(!m)return;
+  if(m.t==='hi'){MP.role='guest';MP.rx=null;cutAcc=0;bucketContacts=0;SBTOOL=null;if(VS[m.v]&&m.v!==SBV)sbSwitch(m.v,true);else setupHud();mpStat('');mpUi();toast('เข้าห้อง '+MP.code+' แล้ว · ขับ'+VNAME[SBV],true)}
+  else if(m.t==='full'){mpStat('ห้องเต็มแล้ว (4 คน)');mpLeave()}
+  else if(MP.role!=='guest')return;
+  else if(m.t==='pl'&&Array.isArray(m.a)){MP.list=m.a.map(p=>({id:String(p.id),name:mpCleanName(p.name),v:VS[p.v]?p.v:null}));mpUi();sbBar()}
+  else if(m.t==='tr')mpApplyTrees(m.a);else if(m.t==='wa')mpApplyWat(m);else if(m.t==='you'&&VS[m.v])sbSwitch(m.v,true);else if(m.t==='msg')toast(String(m.s).slice(0,80),!!m.g)}
+function mpLib(){return window.Peer?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src=MP_LIB;s.onload=ok;s.onerror=()=>{s.remove();no(new Error('lib'))};document.head.appendChild(s)})}
+const mpErr=e=>e&&(e.type==='network'||e.type==='server-error'||e.type==='socket-error'||e.type==='socket-closed')?'ติดต่อระบบจับคู่ไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่':e&&e.type==='browser-incompatible'?'เบราว์เซอร์นี้เล่นหลายคนไม่ได้':'เชื่อมต่อไม่ได้ ('+(e&&e.type||'error')+')';
+function mpStat(s){$('mpStat').textContent=s}
+async function mpHost(){if(!sbOn||state!=='run'||MP.role||MP.peer)return;store.set('loaderMpName',$('mpName').value);mpStat('กำลังสร้างห้อง…');try{await mpLib()}catch(e){mpStat('โหลดระบบเล่นหลายคนไม่ได้ ตรวจสอบอินเทอร์เน็ต');return}
+  const code=Array.from({length:4},()=>MP_ABC[(Math.random()*MP_ABC.length)|0]).join(''),peer=new Peer(MP_PFX+code,{debug:0});MP.peer=peer;
+  peer.on('open',()=>{if(MP.peer!==peer)return;MP.role='host';MP.code=code;MP.me='host';MP.conns=[];MP.players=[{id:'host',name:mpMyName(),v:SBV}];ntDirty.fill(0);mpPlayers();sbBar()});
+  peer.on('connection',c=>{c.on('open',()=>{if(MP.role!=='host'||MP.peer!==peer){c.close();return}MP.conns.push(c);c.on('data',d=>mpOnHost(c,d))});c.on('close',()=>mpDrop(c));c.on('error',()=>mpDrop(c))});
+  peer.on('error',e=>{if(MP.peer!==peer)return;if(!MP.role){peer.destroy();MP.peer=null;if(e.type==='unavailable-id')mpHost();else mpStat(mpErr(e))}else if(e.type!=='peer-unavailable')mpStat('หลุดจากระบบจับคู่ชั่วคราว เพื่อนที่อยู่ในห้องยังเล่นต่อได้ แต่คนใหม่เข้าห้องไม่ได้จนกว่าจะต่อกลับ')});
+  peer.on('disconnected',()=>{setTimeout(()=>{if(MP.peer===peer&&MP.role==='host'&&peer.disconnected&&!peer.destroyed)try{peer.reconnect()}catch(e){}},2000)})}
+function mpDrop(c){if(MP.role!=='host')return;MP.conns=MP.conns.filter(q=>q!==c);const i=MP.players.findIndex(p=>p.id===c.peer);if(i<0)return;const p=MP.players[i];
+  VS[p.v].v=0;MP.players.splice(i,1);toast(p.name+' ออกจากห้องแล้ว');mpPlayers();sbBar()}
+async function mpJoin(code){code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==4){mpStat('ใส่รหัสห้อง 4 ตัว');return}
+  if(MP.role||MP.peer)mpLeave();if(!sbOn||state!=='run')reset('sandbox',true);store.set('loaderMpName',$('mpName').value);mpStat('กำลังเข้าห้อง '+code+'…');
+  try{await mpLib()}catch(e){mpStat('โหลดระบบเล่นหลายคนไม่ได้ ตรวจสอบอินเทอร์เน็ต');return}
+  const peer=new Peer({debug:0});MP.peer=peer;
+  peer.on('open',id=>{if(MP.peer!==peer)return;const c=peer.connect(MP_PFX+code,{reliable:true,serialization:'raw'});
+    setTimeout(()=>{if(MP.peer===peer&&MP.role!=='guest'){mpStat('เชื่อมต่อไม่ได้ ห้องอาจปิดแล้ว หรือเครือข่ายนี้ไม่ยอมให้เชื่อมตรง');mpLeave()}},20000);
+    c.on('open',()=>{if(MP.peer!==peer)return;MP.host=c;MP.me=id;MP.code=code;mpSend(c,{t:'join',name:mpMyName()})});
+    c.on('data',d=>{if(MP.peer===peer)mpOnGuest(d)});c.on('close',()=>{if(MP.peer===peer)mpHostGone()});c.on('error',()=>{if(MP.peer===peer)mpHostGone()})});
+  peer.on('error',e=>{if(MP.peer!==peer)return;if(MP.role!=='guest'){mpStat(e.type==='peer-unavailable'?'ไม่พบห้อง '+code+' ตรวจสอบรหัสอีกครั้ง':mpErr(e));mpLeave()}})}
+function mpHostGone(){if(MP.role!=='guest'){if(MP.peer){mpStat('เชื่อมต่อไม่ได้');mpLeave()}return}mpLeave();toast('ห้องปิดแล้ว · เล่นต่อคนเดียวได้');if(!$('mpBox').hidden)mpStat('ห้องปิดแล้ว')}
+function mpLeave(){const p=MP.peer,host=MP.role==='host';MP.role=null;MP.peer=null;MP.host=null;MP.rx=null;MP.conns=[];
+  if(host)for(const q of MP.players)if(q.id!=='host')VS[q.v].v=0;MP.players=[];MP.list=[];if(p)try{p.destroy()}catch(e){}$('mpTags').replaceChildren();mpUi();if(sbOn)sbBar()}
+// host pressed "เริ่มใหม่": send the new site to everyone (keep the machines guests are driving)
+function mpResync(){if(mpTaken(SBV))SBV=mpFree(VORDER)||SBV;MP.players[0].v=SBV;ntDirty.fill(0);
+  for(const c of MP.conns)if(c.ok){for(const b of mpTiles(mpAllTiles(),3))mpRaw(c,b);for(const b of mpTiles(mpAllTiles(),2))mpRaw(c,b)}
+  MP.sigTree=MP.sigWat='';for(const p of MP.players)p.acc=0;mpPlayers()}
+// name tags over the machines other people drive
+const _mt=new V3(),MPH={ex:()=>_mt.set(E.x,exG.position.y+5.4,E.z),ld:()=>_mt.set(L.x,rearG.position.y+4.6,L.z),tr:()=>_mt.set(T.x,truckG.position.y+4.4,T.z),dz:()=>_mt.set(D.x,dozerG.position.y+4.2,D.z)};
+function mpTags(){const box=$('mpTags'),want=sbOn?MP.list.filter(p=>p.id!==MP.me&&p.v):[];
+  while(box.children.length>want.length)box.lastChild.remove();while(box.children.length<want.length)box.appendChild(document.createElement('div'));
+  want.forEach((p,i)=>{const el=box.children[i];if(el.textContent!==p.name)el.textContent=p.name;MPH[p.v]().project(camera);
+    const vis=_mt.z<1&&Math.abs(_mt.x)<1.1&&Math.abs(_mt.y)<1.1;el.style.display=vis?'':'none';if(vis){el.style.left=((_mt.x+1)/2*innerWidth).toFixed(0)+'px';el.style.top=((1-_mt.y)/2*innerHeight).toFixed(0)+'px'}})}
+function mpOpen(){if(!sbOn||state!=='run'){toast('เล่นหลายคนได้ในโหมดอิสระ');return}$('mpBox').hidden=false;$('sbTools').hidden=true;SBTOOL=null;
+  if(!$('mpName').value)$('mpName').value=store.get('loaderMpName','')||who||'';if(!mpLive())paused=true;mpUi();sbBar()}
+function mpClose(){$('mpBox').hidden=true;paused=false}
+function mpLink(){return(/^https?:/.test(location.protocol)?location.origin+location.pathname:MP_WEB)+'?room='+MP.code}
+function mpUi(){const inRoom=!!MP.role;$('mpIdle').hidden=inRoom||!!MP.peer;$('mpRoom').hidden=!inRoom;
+  if(inRoom){$('mpCodeBig').textContent=MP.code;$('mpLink').value=mpLink();
+    $('mpList').replaceChildren(...MP.list.map(p=>{const li=document.createElement('li'),a=document.createElement('span'),b=document.createElement('small');
+      a.textContent=p.name+(p.id===MP.me?' (คุณ)':'')+(p.id==='host'?' · เจ้าของห้อง':'');b.textContent=p.v?'ขับ'+VNAME[p.v]:'';li.append(a,b);return li}));
+    $('bMpLeave').textContent=MP.role==='host'?'ปิดห้อง':'ออกจากห้อง'}
+  mpBar()}
+function mpBar(){const b=$('mpBadge');b.hidden=!(sbOn&&MP.role);if(!b.hidden){const lost=MP.role==='guest'&&performance.now()-MP.lastRx>4000;
+    b.textContent=lost?'● ห้อง '+MP.code+' · สัญญาณขาด…':'● ห้อง '+MP.code+' · '+MP.list.length+' คน'+(MP.role==='host'?' · คุณเป็นเจ้าของห้อง':'');b.classList.toggle('bad',lost)}
+  for(const e of $('sbVeh').querySelectorAll('[data-v]')){const p=sbOn&&MP.role?MP.list.find(q=>q.v===e.dataset.v&&q.id!==MP.me):null;e.classList.toggle('taken',!!p);e.title=p?p.name+' ขับอยู่':''}}
 function vPose(){const v=vType();if(v==='ex')return{x:E.x,z:E.z,y:exG.position.y,h:E.hd+E.sw,f:E.hd+E.sw,d:14,la:6,oy:0.55};
   if(v==='tr')return{x:T.x,z:T.z,y:truckG.position.y,h:T.hd,f:T.hd,d:17,la:5,oy:0};if(v==='dz')return{x:D.x,z:D.z,y:dozerG.position.y,h:D.hd,f:D.hd,d:13,la:4.5,oy:0};
   return{x:L.x,z:L.z,y:rearG.position.y,h:L.thr,f:L.thr+L.phi,d:13,la:4.5,oy:0}}
@@ -1692,11 +1858,11 @@ function hydPress(dt,inp,j0){const vt=vType(),ex=vt==='ex',run=state==='run'&&!p
     if(stall)tgt=350+Math.random()*12;tgt=Math.min(362,tgt)}
   PRESS+=(tgt-PRESS)*Math.min(1,dt*12);
   if(run&&PRESS>330){reliefT+=dt;reliefRun+=dt;if(reliefRun>2&&!reliefWarned){reliefWarned=true;toast('ปล่อยคันโยก! แรงดันเต็ม วาล์วระบายทำงาน')}}else{reliefRun=0;reliefWarned=false}}
-function step(dt){
+function step(dt){if(MP.role==='guest'){mpGuestStep(dt);return}
   const run=state==='run';
   const inp=run?readInput():{thr:0,steer:0,boom:0,buck:0,brake:true,arm:0,swing:0,travel:0,turn:0};
   const vt=vType();lastInp=inp;const j0=vt==='ex'?[E.bm,E.ar,E.bk,E.sw]:vt==='tr'?[T.bed,0,0,0]:vt==='dz'?[D.blade,0,0,0]:[L.beta,L.alpha,0,0];
-  if(vt==='ex')stepEx(dt,inp);else if(vt==='tr')stepTruck(dt,inp);else if(vt==='dz')stepDozer(dt,inp);else stepVehicle(dt,inp);hydPress(dt,inp,j0);
+  stepV(vt,dt,inp);hydPress(dt,inp,j0);if(MP.role==='host')mpStepRemote(dt);
   refreshBodies(false);
   bucketContacts=N?physics():0;
   countSoil();
@@ -1706,6 +1872,8 @@ function step(dt){
     if(state==='run'&&G.end>0){G.end-=dt;if(G.end<=0)finish(true)}
     if(state==='run'&&elapsed>=lv.limit){elapsed=lv.limit;finish(false)}}
 }
+
+function stepV(vt,dt,inp){if(vt==='ex')stepEx(dt,inp);else if(vt==='tr')stepTruck(dt,inp);else if(vt==='dz')stepDozer(dt,inp);else stepVehicle(dt,inp)}
 
 /* ---------- camera ---------- */
 const camPos=new V3(0,6,10),camLook=new V3(),_t=new V3();
@@ -1721,7 +1889,7 @@ function updCam(dt,snap){const f=snap?1:1-Math.pow(0.004,dt),ex=isEx(),vt=vType(
   camera.position.copy(camPos);camera.lookAt(camLook);camera.updateProjectionMatrix()}
 
 /* ---------- HUD ---------- */
-let toastT=0;function toast(s,good){const el=$('toast');el.textContent=s;el.className='show'+(good?' good':'');toastT=1.4}
+let toastT=0;function toast(s,good){MP.lastT=[s,good];if(MP.quiet)return;const el=$('toast');el.textContent=s;el.className='show'+(good?' good':'');toastT=1.4}
 const fmt=s=>{s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 let hudT=0;
 function setupHud(){$('mTag').textContent=lv.n+' · '+lv.name;$('mTask').innerHTML=lv.task;lv.labels.forEach((t,i)=>{$('s'+i+'l').textContent=t});
@@ -1841,7 +2009,7 @@ function drawChart(recs,l){const el=$('chart');
 function buildMenu(){const box=$('levels');box.replaceChildren();
   {const h=document.createElement('div');h.className='grp';h.textContent='โหมดอิสระ';const sm=document.createElement('small');sm.textContent='Sandbox · ไม่คิดคะแนน';h.appendChild(sm);box.appendChild(h);
     const l=LEVELS.sandbox,b=document.createElement('button');b.type='button';b.className='lv';b.innerHTML='<div class="n"></div><div class="t"></div><div class="d"></div><div class="b"><span class="chip ok"></span></div>';
-    b.querySelector('.n').textContent=l.n;b.querySelector('.t').textContent=l.name;b.querySelector('.d').textContent=l.brief;b.querySelector('.chip').textContent='รถ 4 คัน · ต้นไม้ · น้ำ';b.onclick=()=>reset('sandbox',true);box.appendChild(b)}
+    b.querySelector('.n').textContent=l.n;b.querySelector('.t').textContent=l.name;b.querySelector('.d').textContent=l.brief;b.querySelector('.chip').textContent='รถ 4 คัน · ต้นไม้ · น้ำ · เล่นได้ 4 คน';b.onclick=()=>reset('sandbox',true);box.appendChild(b)}
   for(const [m,th,en] of MACHINES){const h=document.createElement('div');h.className='grp';h.textContent=th;const sm=document.createElement('small');sm.textContent=en;h.appendChild(sm);box.appendChild(h);
     const rec=nextLv(m);
     for(const id of lvIds(m)){const l=LEVELS[id],recs=mine(id),st=lvStatus(id),b=document.createElement('button');b.type='button';b.className='lv'+(id===rec?' rec':'');
@@ -1888,7 +2056,7 @@ function monitor(rdt){if(perf.lock)return;if(rdt>0.5||document.hidden){perf.t=pe
 
 /* ---------- flow ---------- */
 function settle(n){for(let i=0;i<n;i++){refreshBodies(false);physics()}}
-function reset(id,run){lv=LEVELS[id];lvId=id;store.set('loaderLv',id);const wasSb=sbOn;sbOn=!!lv.sandbox;if(sbOn)SBV='ex';useTerrain(sbOn?SB:DIGS);if(wasSb&&!sbOn)sbLeave();const st=lv.start,ex=isEx();Object.assign(TIP,{a:0,w:0,edge:null,fall:false,dy:0,vy:0});STAB=1;COMX=0;hillOn=!!lv.hill;
+function reset(id,run){if(MP.role==='guest')mpLeave();lv=LEVELS[id];lvId=id;store.set('loaderLv',id);const wasSb=sbOn;sbOn=!!lv.sandbox;if(sbOn)SBV='ex';useTerrain(sbOn?SB:DIGS);if(wasSb&&!sbOn)sbLeave();const st=lv.start,ex=isEx();Object.assign(TIP,{a:0,w:0,edge:null,fall:false,dy:0,vy:0});STAB=1;COMX=0;hillOn=!!lv.hill;
   if(ex){Object.assign(E,{x:st.x,z:st.z,hd:st.hd,sw:0,bm:35*DEG,ar:-100*DEG,bk:-60*DEG,v:0});exApplyT()}
   else{Object.assign(L,{x:st.x,z:st.z,thr:st.thr,phi:0,v:0,beta:-14*DEG,alpha:0});applyT();updCyl()}
   setScene(ex,!!lv.truck,lv.pit||null);decoG.visible=!ex;slalomG.visible=id==='slalom';padG.visible=!!lv.pad;patch.visible=!!lv.pile;tgtG.visible=id==='ex_ctrl';
@@ -1906,8 +2074,9 @@ for(const id of ['bTree','bCut','bWater','bDrain','bRight'])$(id).addEventListen
 $('mTag').onclick=()=>{if(sbOn)document.body.classList.toggle('mini')};
 $('bTree').onclick=()=>sbTool('tree','คลิก/แตะบนพื้นเพื่อปลูกต้นไม้');$('bCut').onclick=()=>sbTool('cut','คลิก/แตะที่ต้นไม้เพื่อเอาออก');$('bMap').onclick=sbOverview;
 $('bMapClose').onclick=sbOverviewClose;$('bDrone').onclick=()=>{sbOverviewClose();camMode=3;camYaw=0;toast('มุมโดรน · ลากจอเพื่อหมุน · กด C เพื่อเปลี่ยนมุม',true)};
-$('bTreesAll').onclick=()=>{if(trees.length&&confirm('เอาต้นไม้ออกทั้งหมด '+trees.length+' ต้น?')){for(const t of trees)treeG.remove(t.g);trees.length=0;sbOverview()}};$('bWater').onclick=watToggle;$('bDrain').onclick=watDrain;$('bRight').onclick=()=>{if(sbOn&&state==='run')sbRight()};
-for(const id of ['sbVeh','sbTools'])document.getElementById(id).addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur()});$('bSnd').onclick=SND.toggle;SND.btn();$('bReset').onclick=()=>{if(sbOn&&state==='run'){if(confirm('เริ่มไซต์งานใหม่? สิ่งที่ขุด ต้นไม้ และน้ำจะหายไปทั้งหมด'))reset(lvId,true)}else if(state==='run'||state==='done')reset(lvId,true)};$('bHelp').onclick=showHelp;$('bMenu').onclick=showMenu;
+$('bTreesAll').onclick=()=>{if(trees.length&&confirm('เอาต้นไม้ออกทั้งหมด '+trees.length+' ต้น?')){if(MP.role==='guest'){mpCmd({c:'clear'});return}for(const t of trees)treeG.remove(t.g);trees.length=0;MP.treeV++;sbOverview()}};$('bWater').onclick=watToggle;$('bDrain').onclick=watDrain;$('bMp').onclick=mpOpen;$('mpBadge').onclick=mpOpen;$('bMpHost').onclick=mpHost;$('bMpJoin').onclick=()=>mpJoin($('mpCode').value);$('bMpLeave').onclick=()=>{mpLeave();mpStat('')};$('bMpClose').onclick=mpClose;
+$('mpCode').addEventListener('keydown',e=>{if(e.key==='Enter')mpJoin($('mpCode').value)});$('bMpCopy').onclick=()=>{const l=$('mpLink');(navigator.clipboard?navigator.clipboard.writeText(l.value):Promise.reject()).then(()=>mpStat('คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย'),()=>{l.select();mpStat('กด Ctrl+C / ⌘C เพื่อคัดลอก')})};$('bRight').onclick=()=>{if(sbOn&&state==='run')sbRight()};
+for(const id of ['sbVeh','sbTools'])document.getElementById(id).addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur()});$('bSnd').onclick=SND.toggle;SND.btn();$('bReset').onclick=()=>{if(sbOn&&state==='run'){if(confirm(MP.role==='guest'?'ออกจากห้อง แล้วเริ่มไซต์งานใหม่ของตัวเอง?':'เริ่มไซต์งานใหม่? สิ่งที่ขุด ต้นไม้ และน้ำจะหายไปทั้งหมด'+(MP.role==='host'?' (เพื่อนในห้องจะเห็นไซต์ใหม่ด้วย)':'')))reset(lvId,true)}else if(state==='run'||state==='done')reset(lvId,true)};$('bHelp').onclick=showHelp;$('bMenu').onclick=showMenu;
 $('bHelp2').onclick=showHelp;$('bResume').onclick=resume;$('bHelpMenu').onclick=showMenu;
 $('bAgain').onclick=()=>reset(lvId,true);$('bNext').onclick=()=>reset($('bNext').dataset.lv,true);$('bRHist').onclick=()=>openHist(lvId);$('bRMenu').onclick=showMenu;
 $('bHist').onclick=()=>openHist(lvId);$('bReady').onclick=openReady;$('bRdClose').onclick=()=>{$('ready').hidden=true;buildMenu()};$('bRdPrint').onclick=()=>window.print();$('bRdGo').onclick=()=>reset($('bRdGo').dataset.lv,true);$('bHistClose').onclick=closeHist;$('bCsv').onclick=exportCSV;
@@ -1916,10 +2085,11 @@ $('tools').addEventListener('click',e=>{const b=e.target.closest('button');if(b)
 {const w=$('who');w.value=who;w.addEventListener('input',()=>{who=w.value;store.set('loaderWho',who);buildMenu()});w.addEventListener('keydown',e=>{if(e.key==='Enter')w.blur()})}
 
 reset(lvId,false);
+{const r=new URLSearchParams(location.search).get('room');if(r&&/^[A-Za-z0-9]{4}$/.test(r)){reset('sandbox',true);mpOpen();$('mpCode').value=r.toUpperCase();$('bMpJoin').className='go sm';$('bMpHost').className='go sec';mpStat('ใส่ชื่อ แล้วกด “เข้าห้อง” เพื่อเล่นกับเพื่อนในห้อง '+r.toUpperCase());if(!$('mpName').value)$('mpName').focus()}}   // shared room link
 let acc=0,last=performance.now(),blink=0,frameN=0;
 function frame(t){const rdt=(t-last)/1000;last=t;const dt=clamp(rdt,0,0.05);acc+=dt;let n=0;
-  if(!paused){while(acc>=FDT&&n<3){step(FDT);acc-=FDT;n++}if(n===3)acc=0}else acc=0;
-  drawSoil();updCam(dt,false);hud(dt);monitor(rdt);SND.tick(dt);if(sbOn)sbFrame(dt);
+  if(!paused||mpLive()){while(acc>=FDT&&n<3){step(FDT);acc-=FDT;n++}if(n===3)acc=0}else acc=0;
+  if(MP.role)mpTick(Math.min(rdt,1));drawSoil();   // network timers run on real timeupdCam(dt,false);hud(dt);monitor(rdt);SND.tick(dt);if(sbOn)sbFrame(dt);
   blink+=dt;beacon.material.emissiveIntensity=(Math.sin(blink*9)>0)?1.4:0.1;
   terrSync();frameN++;renderer.shadowMap.needsUpdate=q>=2||(frameN&1)===0;   // low tiers: shadows every other frame
   renderer.render(scene,camera);requestAnimationFrame(frame)}

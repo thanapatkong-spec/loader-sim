@@ -17,6 +17,10 @@ fs.copyFileSync(path.join(nm, 'three', 'build', 'three.min.js'), path.join(out, 
 swap(/<script src="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/three\.js\/r128\/three\.min\.js"><\/script>/,
   '<script src="vendor/three.min.js"></script>', 'the three.js CDN script tag');
 
+// PeerJS (multiplayer, loaded on demand) → local copy; the network itself is still needed to play together
+fs.copyFileSync(path.join(nm, 'peerjs', 'dist', 'peerjs.min.js'), path.join(out, 'vendor', 'peerjs.min.js'));
+swap(/'https:\/\/cdn\.jsdelivr\.net\/npm\/peerjs@1\.5\.4\/dist\/peerjs\.min\.js'/, "'vendor/peerjs.min.js'", 'the PeerJS URL (MP_LIB)');
+
 // Google Fonts → @fontsource copies (same families and weights)
 const fonts = [['barlow-condensed', ['600', '700']], ['ibm-plex-sans-thai', ['400', '600']], ['jetbrains-mono', ['500']]];
 const links = [];
@@ -34,7 +38,7 @@ for (const [fam, weights] of fonts) {
 swap(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\s*<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2[^"]*">/,
   links.join('\n'), 'the Google Fonts links');
 
-if (/https?:\/\/(?!www\.w3\.org)/.test(html.replace(/<!--[\s\S]*?-->/g, '')))
+if (/https?:\/\/(?!www\.w3\.org|thanapatkong-spec\.github\.io)/.test(html.replace(/<!--[\s\S]*?-->/g, '')))
   console.warn('build-app: index.html still references a remote URL');
 fs.writeFileSync(path.join(out, 'index.html'), html);
 console.log('build-app: wrote', path.relative(process.cwd(), out));
