@@ -1,4 +1,5 @@
-# Publishes the web version (index.html) to GitHub Pages on every push to main.
+# Publishes the web version (index.html) to GitHub Pages on every push to main,
+# plus the same page at /khoknongna/ (the โคก หนอง นา edition).
 # One-time setup: Settings → Pages → Build and deployment → Source: "GitHub Actions".
 name: Web (GitHub Pages)
 
@@ -29,6 +30,9 @@ jobs:
         run: |
           mkdir site
           cp index.html site/
+          # โคก หนอง นา edition: same page, opens only the sandbox (see KHOK in index.html)
+          mkdir site/khoknongna
+          cp index.html site/khoknongna/index.html
           touch site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

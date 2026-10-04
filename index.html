@@ -101,6 +101,7 @@ body.sb.mini #mTag::after{content:' ▾'}body.sb.mini #mission>*:not(#mTag):not(
 #sbVeh{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:8px}#sbVeh .btn{min-width:0;padding:6px 2px;font-size:12.5px;letter-spacing:0;white-space:nowrap;overflow:hidden;text-align:center}#sbVeh kbd{margin-left:2px;font-size:10px}
 #sbVeh .btn.on,#sbTools .btn.on,#bToolsBtn.on{border-color:var(--hazard);color:var(--hazard)}
 #sbTools{display:flex;flex-direction:column;gap:6px;padding-left:10px;border-left:2px solid var(--hazard)}#sbTools[hidden]{display:none}
+body.khok #gauges,body.khok #bMenu,body.khok #bHelpMenu{display:none!important}
 #sbVeh .btn.taken{opacity:.5;border-style:dashed;cursor:not-allowed}
 #mpBadge{display:block;margin-top:6px;padding:4px 8px;font:600 12px var(--mono);color:var(--ok);background:none;border:1px solid rgba(255,255,255,.14);border-radius:4px;cursor:pointer;text-align:left;width:100%}#mpBadge[hidden]{display:none}#mpBadge.bad{color:var(--hazard)}
 #mpCodeBig{font:700 56px/1 var(--mono);letter-spacing:.18em;color:var(--hazard);margin:2px 0 10px}
@@ -332,7 +333,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
 
 <div class="overlay" id="mpBox" hidden>
   <div class="card">
-    <div class="lbl">โหมดอิสระ · เล่นหลายคน (สูงสุด 4 คน · 1 คนต่อ 1 คัน)</div>
+    <div class="lbl" id="mpLbl">โหมดอิสระ · เล่นหลายคน (สูงสุด 4 คน · 1 คนต่อ 1 คัน)</div>
     <h1>เล่นด้วยกัน</h1>
     <div class="row"><label class="lbl" for="mpName">ชื่อ</label><input id="mpName" class="name" maxlength="20" placeholder="ชื่อที่เพื่อนเห็น" autocomplete="off" spellcheck="false"></div>
     <div id="mpIdle">
@@ -353,7 +354,7 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
 <div id="mpTags" aria-hidden="true"></div>
 <div class="overlay" id="sbMap" hidden>
   <div class="card wide">
-    <div class="lbl">โหมดอิสระ · ไซต์งาน 5 ไร่ (90 × 90 m)</div>
+    <div class="lbl" id="sbMapLbl">โหมดอิสระ · ไซต์งาน 5 ไร่ (90 × 90 m)</div>
     <h1>ภาพรวมโครงการ</h1>
     <div class="row"><button class="go sm" id="bMapClose" type="button">กลับไปทำงาน</button><button class="go sec" id="bDrone" type="button">ดูมุมโดรน 3 มิติ</button><button class="go sec" id="bTreesAll" type="button">เอาต้นไม้ออกทั้งหมด</button></div>
     <div class="kpis" id="mKpi"></div>
@@ -378,6 +379,9 @@ table.rd td{padding:6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-a
 <script>
 (()=>{
 const V3=THREE.Vector3, $=id=>document.getElementById(id);
+// "โคก หนอง นา" edition: the same page served at /khoknongna/ (or ?app=khok) opens only the 5-rai sandbox, renamed, without the gauge bar or the level menu
+const KHOK=/\/khoknongna\/?(index\.html)?$/.test(location.pathname)||new URLSearchParams(location.search).get('app')==='khok';
+if(KHOK){document.body.classList.add('khok');document.title='โคก หนอง นา';for(const [id,t] of [['sbMapLbl','โคก หนอง นา · 5 ไร่ (90 × 90 m)'],['mpLbl','โคก หนอง นา · เล่นหลายคน (สูงสุด 4 คน · 1 คนต่อ 1 คัน)']]){const e=$(id);if(e)e.textContent=t}}
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const DEG=Math.PI/180;
 
@@ -1401,7 +1405,8 @@ function lvStatus(id){const recs=mine(id),last=recs.slice(-PASS_WIN),np=last.fil
 const MACHINES=[['loader','รถตักล้อยาง','Wheel Loader'],['ex','รถขุด','Excavator · คันโยก ISO']];
 const lvIds=m=>LV_ORDER.filter(id=>(LEVELS[id].machine||'loader')===m);
 const nextLv=m=>lvIds(m).find(id=>!lvStatus(id).passed);
-let lvId=store.get('loaderLv','slalom');if(!LEVELS[lvId])lvId='slalom';let lv=LEVELS[lvId];
+if(KHOK)Object.assign(LEVELS.sandbox,{n:'โคก หนอง นา',name:'5 ไร่',task:'โคก หนอง นา 5 ไร่: ขุดบ่อ ขนดินไปทิ้ง เกลี่ยดิน ปลูกต้นไม้ และเปิดน้ำเข้าบ่อได้ตามต้องการ'});
+let lvId=KHOK?'sandbox':store.get('loaderLv','slalom');if(!LEVELS[lvId])lvId='slalom';let lv=LEVELS[lvId];
 
 /* ================= โหมดอิสระ (sandbox): a 5-rai site (90 × 90 m), dig anywhere down to 20 m, four machines ================= */
 const SB={id:'sb',kind:'terrain',x0:-45,x1:45,z0:-45,z1:45,cs:0.5,maxd:20,d:20};
@@ -2039,7 +2044,7 @@ function openReady(){$('rdWho').textContent=whoName();$('rdDate').textContent=ne
     body.appendChild(v)}
   $('bRdGo').hidden=!go;$('bRdGo').dataset.lv=go||'';$('ready').hidden=false}
 function qInfo(){$('qInfo').textContent=`กราฟิก: ${QUAL[q].name} · เม็ดดิน ${QUAL[q].n} เม็ด (ปรับอัตโนมัติตามความลื่นของเครื่อง)`}
-function showMenu(){state='menu';paused=false;for(const o of ['help','result','hist','ready'])$(o).hidden=true;buildMenu();$('menu').hidden=false}
+function showMenu(){if(KHOK){for(const o of ['help','result','hist','ready'])$(o).hidden=true;paused=false;return}state='menu';paused=false;for(const o of ['help','result','hist','ready'])$(o).hidden=true;buildMenu();$('menu').hidden=false}
 function showHelp(){const inRun=state==='run';if(inRun)paused=true;const ex=isEx();$('ctlL').hidden=inRun&&ex;$('ctlE').hidden=inRun&&!ex;
   $('hTag').textContent=inRun?lv.n+' · '+lv.name:'วิธีบังคับ';$('hTitle').textContent=inRun?lv.name:'วิธีบังคับรถตัก';
   $('hGoal').textContent=inRun?lv.brief:'รถตัก: ขับหลบกรวย ตักให้เต็มบุ้งกี๋ เทลงกระบะแบบตัว V และภารกิจบรรทุก 15 ตัน · รถขุด (คันโยก ISO): ฝึกคันโยก ขุดร่อง และขุดใส่รถบรรทุก';
@@ -2060,7 +2065,7 @@ function monitor(rdt){if(perf.lock)return;if(rdt>0.5||document.hidden){perf.t=pe
 
 /* ---------- flow ---------- */
 function settle(n){for(let i=0;i<n;i++){refreshBodies(false);physics()}}
-function reset(id,run){if(MP.role==='guest')mpLeave();lv=LEVELS[id];lvId=id;store.set('loaderLv',id);const wasSb=sbOn;sbOn=!!lv.sandbox;if(sbOn)SBV='ex';useTerrain(sbOn?SB:DIGS);if(wasSb&&!sbOn)sbLeave();const st=lv.start,ex=isEx();Object.assign(TIP,{a:0,w:0,edge:null,fall:false,dy:0,vy:0});STAB=1;COMX=0;hillOn=!!lv.hill;
+function reset(id,run){if(MP.role==='guest')mpLeave();if(KHOK)id='sandbox';lv=LEVELS[id];lvId=id;if(!KHOK)store.set('loaderLv',id);const wasSb=sbOn;sbOn=!!lv.sandbox;if(sbOn)SBV='ex';useTerrain(sbOn?SB:DIGS);if(wasSb&&!sbOn)sbLeave();const st=lv.start,ex=isEx();Object.assign(TIP,{a:0,w:0,edge:null,fall:false,dy:0,vy:0});STAB=1;COMX=0;hillOn=!!lv.hill;
   if(ex){Object.assign(E,{x:st.x,z:st.z,hd:st.hd,sw:0,bm:35*DEG,ar:-100*DEG,bk:-60*DEG,v:0});exApplyT()}
   else{Object.assign(L,{x:st.x,z:st.z,thr:st.thr,phi:0,v:0,beta:-14*DEG,alpha:0});applyT();updCyl()}
   setScene(ex,!!lv.truck,lv.pit||null);decoG.visible=!ex;slalomG.visible=id==='slalom';padG.visible=!!lv.pad;patch.visible=!!lv.pile;tgtG.visible=id==='ex_ctrl';
@@ -2088,7 +2093,7 @@ $('bClear').onclick=()=>{if(!confirm(`ลบประวัติการฝึ
 $('tools').addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur()});  // keep Space as brake, not "click the last button"
 {const w=$('who');w.value=who;w.addEventListener('input',()=>{who=w.value;store.set('loaderWho',who);buildMenu()});w.addEventListener('keydown',e=>{if(e.key==='Enter')w.blur()})}
 
-reset(lvId,false);
+reset(lvId,KHOK);
 {const r=new URLSearchParams(location.search).get('room');if(r&&/^[A-Za-z0-9]{4}$/.test(r)){reset('sandbox',true);mpOpen();$('mpCode').value=r.toUpperCase();$('bMpJoin').className='go sm';$('bMpHost').className='go sec';mpStat('ใส่ชื่อ แล้วกด “เข้าห้อง” เพื่อเล่นกับเพื่อนในห้อง '+r.toUpperCase());if(!$('mpName').value)$('mpName').focus()}}   // shared room link
 let acc=0,last=performance.now(),blink=0,frameN=0;
 function frame(t){const rdt=(t-last)/1000;last=t;const dt=clamp(rdt,0,0.05);acc+=dt;let n=0;
