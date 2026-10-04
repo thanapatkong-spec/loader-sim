@@ -56,6 +56,7 @@ Web-based training simulator for wheel-loader operators. Owner: Thanapat (PETSBO
 
 ## Web (GitHub Pages)
 - `.github/workflows/pages.yml` publishes `index.html` to https://thanapatkong-spec.github.io/loader-sim/ on every push to `main` touching it (needs Settings → Pages → Source: GitHub Actions once). Training logs live in each browser's localStorage for that domain.
+- "โคก หนอง นา" edition: the workflow also copies `index.html` to `/khoknongna/` (https://thanapatkong-spec.github.io/loader-sim/khoknongna/). `KHOK` (that path or `?app=khok`) adds `body.khok`: starts straight in the sandbox (`reset(lvId,KHOK)`, `reset()` forces `sandbox`, `showMenu()` only closes overlays), renames it (`LEVELS.sandbox.n/name/task`, title, `#sbMapLbl`, `#mpLbl`), hides `#gauges`, `#bMenu`, `#bHelpMenu`, and doesn't write `loaderLv`. Multiplayer rooms are shared with the main page.
 
 ## Desktop build (`desktop/`)
 - Electron shell (`main.js`) around a generated offline copy of `index.html`: `build-app.js` writes `desktop/app/` and swaps the cdnjs Three.js tag and Google Fonts links for local copies from `node_modules` (`three@0.128.0`, `@fontsource/*`; `peerjs@1.5.4` replaces the `MP_LIB` URL). It throws if those tags change in `index.html`, so update the regexes there when editing them.
